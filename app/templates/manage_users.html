@@ -1,0 +1,214 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div style="max-width: 1100px; margin: 0 auto;">
+    
+    <div style="background: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #ebeef5;">
+        <form method="get" action="{{ url_for('manage_users') }}" style="display: flex; gap: 12px; align-items: center; flex-wrap: nowrap; overflow-x: auto;">
+            
+            <span style="font-weight: bold; color: #555; font-size: 14px; white-space: nowrap;">人员检索：</span>
+            
+            {% if session.role == 'admin' %}
+            <select name="filter_dept" style="height: 36px; padding: 0 10px; border-radius: 4px; border: 1px solid #dcdfe6; color: #606266; outline: none; background: white; min-width: 120px;">
+                <option value="">🏢 所有部门</option>
+                {% for dept in departments %}
+                <option value="{{ dept.id }}" {% if request.args.get('filter_dept') == dept.id|string %}selected{% endif %}>{{ dept.name }}</option>
+                {% endfor %}
+            </select>
+            {% endif %}
+            
+            <select name="filter_role" style="height: 36px; padding: 0 10px; border-radius: 4px; border: 1px solid #dcdfe6; color: #606266; outline: none; background: white; min-width: 120px;">
+                <option value="">🎭 所有角色</option>
+                <option value="applicant" {% if request.args.get('filter_role') == 'applicant' %}selected{% endif %}>工单申请者</option>
+                <option value="acceptor" {% if request.args.get('filter_role') == 'acceptor' %}selected{% endif %}>工单接单员</option>
+                <option value="dept_admin" {% if request.args.get('filter_role') == 'dept_admin' %}selected{% endif %}>部门管理员</option>
+                {% if session.role == 'admin' %}
+                <option value="admin" {% if request.args.get('filter_role') == 'admin' %}selected{% endif %}>系统管理员</option>
+                {% endif %}
+            </select>
+
+            <input type="text" name="q" value="{{ request.args.get('q', '') }}" placeholder="姓名 / 昵称 / 手机 / 一卡通 / UID" style="height: 36px; flex: 1; min-width: 250px; padding: 0 12px; border-radius: 4px; border: 1px solid #dcdfe6; outline: none; box-sizing: border-box;">
+            
+            <button type="submit" class="btn-primary" style="height: 36px; padding: 0 20px; border: none; font-size: 14px; cursor: pointer; border-radius: 4px; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center;">开始搜索</button>
+            
+            <a href="{{ url_for('manage_users') }}" style="color: #909399; text-decoration: none; font-size: 13px; white-space: nowrap; padding: 0 5px;">重置条件</a>
+        </form>
+    </div>
+    
+        <span style="color: #666; font-size: 14px;">当前操作身份: 
+            {% if session['role'] == 'admin' %}系统管理员
+            {% elif session['role'] == 'dept_admin' %}部门管理员
+            {% else %}{{ session['role'] }}
+            {% endif %}
+        </span>
+    </div>
+
+    {% if pending_users %}
+    <div class="section" style="border: 2px solid #e6a23c; background-color: #fffdf5; padding: 20px; margin-bottom: 30px; border-radius: 8px; box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);">
+        <h3 style="color: #e6a23c; margin-top: 0; display: flex; align-items: center;">
+            🔔 待审核注册申请 
+            <span style="font-size: 12px; background: #e6a23c; color: white; padding: 2px 8px; border-radius: 10px; margin-left: 10px;">{{ pending_users|length }} 人</span>
+        </h3>
+        <p style="color: #888; font-size: 13px;">以下用户刚刚注册，UID 已自动生成，需要您批准后才能正式启用。</p>
+        
+        <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+            <thead style="background-color: #fdf6ec;">
+                <tr>
+                    <th style="padding: 10px; border-bottom: 1px solid #faecd8; text-align: left;">UID (自动)</th>
+                    <th style="padding: 10px; border-bottom: 1px solid #faecd8; text-align: left;">真实姓名</th>
+                    <th style="padding: 10px; border-bottom: 1px solid #faecd8; text-align: left;">申请角色</th>
+                    <th style="padding: 10px; border-bottom: 1px solid #faecd8; text-align: left;">所属部门</th>
+                    <th style="padding: 10px; border-bottom: 1px solid #faecd8; text-align: left;">联系方式 (卡号/手机)</th>
+                    <th style="padding: 10px; border-bottom: 1px solid #faecd8; text-align: left;">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in pending_users %}
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px; font-family: monospace; color: #666;">{{ u.uid }}</td>
+                    <td style="padding: 10px;"><strong>{{ u.real_name }}</strong></td>
+                    <td style="padding: 10px;">
+                        {% if u.role == 'applicant' %}<span style="color: #409eff;">工单申请者</span>
+                        {% elif u.role == 'acceptor' %}<span style="color: #67c23a;">工单接单员</span>
+                        {% else %}{{ u.role }}{% endif %}
+                    </td>
+                    <td style="padding: 10px;">{{ u.dept_name or '无' }}</td>
+                    <td style="padding: 10px;">
+                        <div style="font-size: 13px;">💳 {{ u.card_id }}</div>
+                        <div style="font-size: 12px; color: #888;">📱 {{ u.phone }}</div>
+                    </td>
+                    <td style="padding: 10px;">
+                        <div style="display: flex; gap: 10px;">
+                            <a href="{{ url_for('approve_user', user_id=u.id) }}" class="btn-primary" style="background-color: #67c23a; border: none; padding: 5px 12px; font-size: 12px; text-decoration: none; color: white; border-radius: 4px;">通过</a>
+                            <a href="{{ url_for('delete_user', user_id=u.id) }}" class="btn-danger" style="background-color: #f56c6c; border: none; padding: 5px 12px; font-size: 12px; text-decoration: none; color: white; border-radius: 4px;" onclick="return confirm('确定要拒绝并删除用户 {{ u.real_name }} 吗？');">拒绝</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+
+    <div class="section" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 12px 0 rgba(0,0,0,0.05);">
+        <h3 style="margin-top: 0;">正式成员列表</h3>
+        
+        {% if users %}
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background-color: #f8f9fa;">
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #eee;">UID</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #eee;">姓名 (昵称)</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #eee;">角色</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #eee;">所属部门</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #eee;">联系方式</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #eee;">状态</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #eee;">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr style="border-bottom: 1px solid #f0f0f0;">
+                    <td style="padding: 12px; font-family: monospace; font-weight: bold; color: #333;">{{ user.uid }}</td>
+                    
+                    <td style="padding: 12px;">
+                        {{ user.real_name }}
+                        {% if user.nickname %}
+                        <div style="font-size: 12px; color: #999;">({{ user.nickname }})</div>
+                        {% endif %}
+                    </td>
+                    
+                    <td style="padding: 12px;">
+                        {% if user.role == 'admin' %}<span style="font-weight:bold; color:#f56c6c;">系统管理员</span>
+                        {% elif user.role == 'dept_admin' %}<span style="font-weight:bold; color:#409eff;">部门管理员</span>
+                        {% elif user.role == 'acceptor' %}接单员
+                        {% else %}申请者{% endif %}
+                    </td>
+                    
+                    <td style="padding: 12px;">{{ user.dept_name or '全校' }}</td>
+                    
+                    <td style="padding: 12px;">
+                        <div style="font-size: 13px;">💳 {{ user.card_id }}</div>
+                        <div style="font-size: 12px; color: #888;">📱 {{ user.phone }}</div>
+                    </td>
+                    
+                    <td style="padding: 12px;">
+                        {% if user.is_approved == 1 %}
+                            <span style="color: #67c23a; font-size: 13px;">● 正常</span>
+                        {% else %}
+                            <span style="color: #e6a23c; font-size: 13px;">● 异常</span>
+                        {% endif %}
+                    </td>
+                    
+                    <td style="padding: 12px;">
+                        <a href="{{ url_for('edit_user', user_id=user.id) }}" style="color: #409eff; text-decoration: none; margin-right: 10px;">编辑</a>
+                        
+                        {% if user.id|string != session['user_id']|string %}
+                        <a href="{{ url_for('delete_user', user_id=user.id) }}" style="color: #f56c6c; text-decoration: none;" onclick="return confirm('确定要删除用户 {{ user.real_name }} 吗？此操作不可恢复。');">删除</a>
+                        {% else %}
+                        <span style="color: #ccc; cursor: not-allowed;">删除</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="padding: 20px; color: #999; text-align: center;">暂无正式成员。</p>
+        {% endif %}
+    </div>
+
+    <div class="section" style="margin-top: 30px; background-color: #f9f9f9; padding: 20px; border-radius: 8px; border: 1px solid #eee;">
+        <h3 style="margin-top: 0; margin-bottom: 15px;">手动添加新用户 (免审)</h3>
+        
+        <form action="{{ url_for('create_user') }}" method="post" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+            
+            <div style="display: flex; flex-direction: column; width: 120px;">
+                <label style="font-size: 12px; margin-bottom: 5px; font-weight: bold; color: #555;">真实姓名</label>
+                <input type="text" name="real_name" placeholder="姓名" required style="padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+
+            <div style="display: flex; flex-direction: column; width: 140px;">
+                <label style="font-size: 12px; margin-bottom: 5px; font-weight: bold; color: #555;">一卡通号</label>
+                <input type="text" name="card_id" placeholder="唯一卡号" required style="padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+
+            <div style="display: flex; flex-direction: column; width: 140px;">
+                <label style="font-size: 12px; margin-bottom: 5px; font-weight: bold; color: #555;">手机号</label>
+                <input type="text" name="phone" placeholder="11位手机号" required style="padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            
+            <div style="display: flex; flex-direction: column; width: 120px;">
+                <label style="font-size: 12px; margin-bottom: 5px; font-weight: bold; color: #555;">初始密码</label>
+                <input type="text" name="password" value="123456" required style="padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            
+            <div style="display: flex; flex-direction: column; width: 130px;">
+                <label style="font-size: 12px; margin-bottom: 5px; font-weight: bold; color: #555;">角色</label>
+                <select name="role" required style="padding: 6px; border: 1px solid #ddd; border-radius: 4px; height: 32px;">
+                    <option value="applicant">工单申请者</option>
+                    <option value="acceptor">工单接单员</option>
+                    {% if session['role'] == 'admin' %}
+                    <option value="dept_admin">部门管理员</option>
+                    {% endif %}
+                </select>
+            </div>
+            
+            {% if session['role'] == 'admin' %}
+            <div style="display: flex; flex-direction: column; width: 150px;">
+                <label style="font-size: 12px; margin-bottom: 5px; font-weight: bold; color: #555;">所属部门</label>
+                <select name="department_id" style="padding: 6px; border: 1px solid #ddd; border-radius: 4px; height: 32px;">
+                    {% for dept in departments %}
+                    <option value="{{ dept.id }}">{{ dept.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <button type="submit" class="btn-primary" style="height: 32px; padding: 0 20px; border-radius: 4px;">直接添加</button>
+        </form>
+    </div>
+
+</div>
+{% endblock %}

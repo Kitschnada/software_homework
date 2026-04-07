@@ -1,0 +1,47 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/zh-cn.js'></script>
+
+<div style="max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="border:none; margin:0;">📅 日程排期看板</h2>
+        <div style="font-size: 13px;">
+            <span style="display:inline-block; width:12px; height:12px; background:#ffc107; border-radius:3px; margin-right:5px;"></span> 待接单
+            <span style="display:inline-block; width:12px; height:12px; background:#007bff; border-radius:3px; margin-left:15px; margin-right:5px;"></span> 制作中
+        </div>
+    </div>
+    
+    <div id="calendar"></div>
+</div>
+
+<script id="events-data" type="application/json">
+    {{ events | tojson | safe }}
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendar');
+        
+        var eventsData = JSON.parse(document.getElementById('events-data').textContent);
+        
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'zh-cn', // 中文显示
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,listWeek'
+            },
+            events: eventsData,
+            eventClick: function(info) {
+                // 点击事件时提示详情
+                alert('工单 ID: #' + info.event.id + '\n简述: ' + info.event.title + '\n截止日: ' + info.event.startStr);
+            }
+        });
+        calendar.render();
+    });
+</script>
+{% endblock %}

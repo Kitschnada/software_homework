@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+{% block content %}
+<div style="max-width: 600px; margin: 20px auto;">
+    <h2>个人账户管理</h2>
+    
+    <div class="section">
+        <h3>基本信息 (不可修改)</h3>
+        <p><strong>唯一识别码 (UID):</strong> {{ user.uid }}</p>
+        <p><strong>一卡通号:</strong> {{ user.card_id }}</p>
+        <p><strong>真实姓名:</strong> {{ user.real_name }}</p>
+        <p><strong>手机号:</strong> {{ user.phone }}</p>
+        <p><strong>所属部门:</strong> 
+            {{ user.department_id }} 
+        </p>
+    </div>
+    
+    <div class="section" style="margin-top: 20px;">
+        <h3>个性化设置</h3>
+        <form method="post">
+            <div class="form-group">
+                <label>账户昵称 (可用于登录):</label>
+                <input type="text" name="nickname" value="{{ user.nickname or '' }}" placeholder="设置一个好记的昵称">
+            </div>
+            <button type="submit" class="btn-primary">保存设置</button>
+        </form>
+    </div>
+    
+    <div style="margin-top: 20px;">
+        <a href="javascript:history.back()" style="color: #666;">返回上一页</a>
+    </div>
+</div>
+{% endblock %}

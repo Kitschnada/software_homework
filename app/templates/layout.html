@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>融媒体中心工单系统</title>
+    <style>
+        /* 保持原有的专业风格 */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0;
+            background-color: #f4f7f6;
+            color: #333;
+        }
+        .container { 
+            max-width: 1000px; 
+            margin: 30px auto; 
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        nav { 
+            margin-bottom: 20px; 
+            padding: 15px; 
+            background: #007bff; 
+            color: white;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 15px;
+            font-weight: bold;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+        h2, h3, h4 {
+            color: #2c3e50;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        /* 增加 readonly 输入框的样式 */
+        input[readonly], input[disabled] {
+            background-color: #e9ecef;
+            cursor: not-allowed;
+            color: #6c757d;
+        }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 15px; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        th, td { 
+            border: 1px solid #e1e4e8; 
+            padding: 12px; 
+            text-align: left; 
+        }
+        th { 
+            background-color: #f8f9fa; 
+            font-weight: 600;
+            color: #495057;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .flash { 
+            padding: 10px;
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            border-radius: 4px;
+            list-style-type: none;
+            margin-bottom: 20px;
+        }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 500; }
+        input[type="text"], input[type="password"], input[type="date"], select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            padding: 5px 10px;
+            text-decoration: none;
+            color: white;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            padding: 5px 10px;
+            text-decoration: none;
+            color: white;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        .footer-section {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px dashed #ddd;
+            text-align: center;
+        }
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        .link-btn {
+            display: inline-block;
+            padding: 8px 16px;
+            background-color: #f8f9fa;
+            color: #555;
+            text-decoration: none;
+            border: 1px solid #e0e0e0;
+            border-radius: 20px; /* 胶囊形状 */
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+        .link-btn:hover {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+            transform: translateY(-2px); /* 悬停微动效果 */
+            box-shadow: 0 2px 5px rgba(0,123,255,0.3);
+        }
+        .footer-copyright {
+            margin-top: 25px;
+            color: #aaa;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            {% if session.user_id %}
+                <span>欢迎, {{ session.username }} 
+                    {% if session.role == 'admin' %}(系统管理员)
+                    {% elif session.role == 'dept_admin' %}
+                        {% if session.dept_code == 'MEDIA' %}(融媒体中心管理员)
+                        {% else %}(一般管理员)
+                        {% endif %}
+                    {% elif session.role == 'acceptor' %}(成员账户)
+                    {% elif session.role == 'applicant' %}(一般账户)
+                    {% endif %}
+                </span>
+                
+                <div>
+                    <a href="{{ url_for('dashboard') }}">控制台</a>
+                    {% if session.role != 'admin' %}
+                    <a href="{{ url_for('calendar_view') }}" style="color: #ffeb3b;">📅 日程排期</a>
+                    {% endif %}
+                    
+                    {% if session.role in ['admin', 'dept_admin'] %}
+                    <a href="{{ url_for('manage_users') }}">用户管理</a>
+                    {% endif %}
+                    
+                    <a href="{{ url_for('profile') }}">个人信息</a>
+                    <a href="{{ url_for('logout') }}">退出登录</a>
+                </div>
+            {% else %}
+                <span>吴健雄学院融媒体中心工单系统</span>
+                <div>
+                    <a href="{{ url_for('login') }}">登录</a>
+                    <a href="{{ url_for('register') }}">注册申请</a>
+                </div>
+            {% endif %}
+        </nav>
+        
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class="flash">
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+        
+        <div style="min-height: 400px;">
+            {% block content %}{% endblock %}
+        </div>
+
+        <div class="footer-section">
+            <h5 style="color: #999; margin: 0 0 10px 0; font-weight: normal; font-size: 14px;">— 常用工具与链接 —</h5>
+            
+            <div class="footer-links">
+                <a href="https://wjx.seu.edu.cn/" target="_blank" class="link-btn">
+                    🏛️ 东南大学吴健雄学院
+                </a>
+                <a href="https://xiumi.us/#/" target="_blank" class="link-btn">
+                    🎨 秀米编辑器
+                </a>
+                <a href="https://mp.weixin.qq.com/" target="_blank" class="link-btn">
+                    💬 微信公众平台
+                </a>
+                <a href="https://miaobi.xinhuaskl.com/" target="_blank" class="link-btn">
+                    ✍️ 新华妙笔
+                </a>
+            </div>
+
+            <div class="footer-copyright">
+                &copy; 2026 融媒体中心工单管理系统 | Support by 吴健雄学院融媒体中心
+            </div>
+        </div>
+    </div>
+</body>
+</html>

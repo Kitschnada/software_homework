@@ -1,0 +1,130 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 0 auto;">
+    
+    <h2>接单者控制台</h2>
+    
+    <h3>待接单工单池</h3>
+    {% if available_orders %}
+    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+        <thead style="background-color: #f8f9fa;">
+            <tr>
+                <th style="padding: 10px; border-bottom: 2px solid #eee; text-align: left;">类别</th>
+                <th style="padding: 10px; border-bottom: 2px solid #eee; text-align: left;">申请人</th>
+                <th style="padding: 10px; border-bottom: 2px solid #eee; text-align: left;">部门 / 联系方式</th>
+                <th style="padding: 10px; border-bottom: 2px solid #eee; text-align: left;">截止时间</th>
+                <th style="padding: 10px; border-bottom: 2px solid #eee; text-align: left; width: 30%;">制作要求</th>
+                <th style="padding: 10px; border-bottom: 2px solid #eee; text-align: left;">附件</th>
+                <th style="padding: 10px; border-bottom: 2px solid #eee; text-align: left;">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in available_orders %}
+            <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 10px;">
+                    <span style="background: #e1f3d8; color: #67c23a; padding: 2px 6px; border-radius: 4px; font-size: 12px;">
+                        {{ order.category_name }}
+                    </span>
+                </td>
+                <td style="padding: 10px;">
+                    <strong>{{ order.applicant_name }}</strong>
+                    <div style="font-size: 12px; color: #999;">{{ order.applicant_uid }}</div>
+                </td>
+                <td style="padding: 10px;">
+                    <div>{{ order.dept_name }}</div>
+                    <div style="font-size: 12px; color: #666;">{{ order.contact }}</div>
+                </td>
+                <td style="padding: 10px; color: #e6a23c;">{{ order.deadline }}</td>
+                <td style="padding: 10px; font-size: 13px; color: #555;">{{ order.requirements }}</td>
+                <td style="padding: 10px;">
+                    {% if order.attachment_path %}
+                        <a href="{{ url_for('static', filename='uploads/' + order.attachment_path) }}" target="_blank" style="color: #409eff; text-decoration: none;">
+                            📦 下载附件
+                        </a>
+                    {% else %}
+                        <span style="color: #ccc;">-</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 10px;">
+                    <a href="{{ url_for('accept_order', order_id=order.id) }}" class="btn-primary" style="padding: 5px 15px; text-decoration: none; display: inline-block;">接单</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="padding: 20px; background: #f9f9f9; text-align: center; color: #888; border-radius: 5px;">
+        当前没有待接单的工单，喝杯咖啡休息一下吧 ☕️
+    </div>
+    {% endif %}
+
+    <h3 style="margin-top: 50px;">我的任务</h3>
+    {% if my_orders %}
+    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+        <thead style="background-color: #f8f9fa;">
+            <tr>
+                <th style="padding: 10px; border-bottom: 2px solid #eee; text-align: left;">ID</th>
+                <th style="padding: 10px; border-bottom: 2px solid #eee; text-align: left;">类别</th>
+                <th style="padding: 10px; border-bottom: 2px solid #eee; text-align: left;">申请人</th>
+                <th style="padding: 10px; border-bottom: 2px solid #eee; text-align: left;">部门 / 联系方式</th>
+                <th style="padding: 10px; border-bottom: 2px solid #eee; text-align: left;">原始附件</th>
+                <th style="padding: 10px; border-bottom: 2px solid #eee; text-align: left;">当前状态</th>
+                <th style="padding: 10px; border-bottom: 2px solid #eee; text-align: left;">成果上传</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in my_orders %}
+            <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 10px; color: #888;">#{{ order.id }}</td>
+                <td style="padding: 10px;">{{ order.category_name }}</td>
+                <td style="padding: 10px;">
+                    {{ order.applicant_name }}
+                    {% if order.applicant_phone %}
+                    <div style="font-size: 12px; color: #999;">📞 {{ order.applicant_phone }}</div>
+                    {% endif %}
+                </td>
+                <td style="padding: 10px;">
+                    {{ order.dept_name }} <br>
+                    <span style="font-size: 12px; color: #666;">{{ order.contact }}</span>
+                </td>
+                <td style="padding: 10px;">
+                    {% if order.attachment_path %}
+                        <a href="{{ url_for('static', filename='uploads/' + order.attachment_path) }}" target="_blank" style="color: #409eff;">查看</a>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td style="padding: 10px;">
+                    {% if order.status == 'accepted' or order.status == 'processing' %}
+                        <span style="color: #e6a23c;">⚡ 制作中</span>
+                    {% elif order.status == 'completed' %}
+                        <span style="color: #67c23a;">✅ 已完成</span>
+                    {% endif %}
+                </td>
+                <td style="padding: 10px;">
+                    {% if order.status != 'completed' %}
+                    <form method="post" action="{{ url_for('upload_result', assignment_id=order.assignment_id) }}" enctype="multipart/form-data" style="display: flex; align-items: center; gap: 5px;">
+                        <input type="file" name="result_file" required style="font-size: 12px; max-width: 150px;">
+                        <button type="submit" class="btn-primary" style="padding: 4px 8px; font-size: 12px;">上传</button>
+                    </form>
+                    {% else %}
+                        <div>
+                            <span style="color: #999; font-size: 12px;">{{ order.completed_at }}</span>
+                            <br>
+                            <a href="{{ url_for('static', filename='results/' + order.result_path) }}" target="_blank" style="color: #67c23a; text-decoration: none; font-weight: bold;">
+                                查看成果
+                            </a>
+                        </div>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: #999;">您当前没有正在进行的任务。</p>
+    {% endif %}
+
+</div>
+{% endblock %}
