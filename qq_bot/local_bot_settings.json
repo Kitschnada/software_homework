@@ -6,7 +6,7 @@
   "bot_qq": "402307931",
   "work_group_id": "1078831163",
   "enable_llm": false,
-  "openrouter_api_key": "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",
+  "openrouter_api_key": "sk-or-v1-a",
   "default_llm_model": "auto",
   "system_prompt": "你是一个乐于助人的吴健雄学院融媒体中心工单系统智能助手，你的名字是融小媒。你的回答应尽量简明扼要，且态度亲切。",
   "pa_username": "LiuMuqing",
