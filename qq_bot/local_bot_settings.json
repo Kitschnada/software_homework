@@ -1,5 +1,5 @@
 {
-  "server_url": "https://liumuqing.pythonanywhere.com/",
+  "server_url": "",
   "qq_bot_token": "IThK.RzDME3JBfme",
   "napcat_api": "http://127.0.0.1:3000",
   "napcat_token": "IThK.RzDME3JBfme",
@@ -9,9 +9,9 @@
   "openrouter_api_key": "sk-or-v1-a",
   "default_llm_model": "auto",
   "system_prompt": "你是一个乐于助人的吴健雄学院融媒体中心工单系统智能助手，你的名字是融小媒。你的回答应尽量简明扼要，且态度亲切。",
-  "pa_username": "LiuMuqing",
-  "pa_password": "lmq20041123",
-  "pa_domain": "liumuqing.pythonanywhere.com",
+  "pa_username": "",
+  "pa_password": "",
+  "pa_domain": "",
   "webhook_port": 6060,
   "poll_interval": 5
 }
