@@ -53,6 +53,7 @@ def edit_order(order_id):
 
 def cancel_order(order_id):
     if session.get('role') != 'applicant': return redirect(url_for('login'))
+    if request.method != 'POST': return redirect(url_for('applicant_dashboard'))
     
     success, msg = OrderService.cancel_order(order_id, session['user_id'])
     flash(msg)
@@ -79,10 +80,12 @@ def acceptor_dashboard():
     if session.get('role') != 'acceptor': return redirect(url_for('login'))
     
     available, my_tasks = OrderService.get_acceptor_view_data(session['user_id'])
-    return render_template('acceptor.html', available_orders=available, my_orders=my_tasks)
+    total_hours = OrderService.get_acceptor_total_hours(session['user_id'])
+    return render_template('acceptor.html', available_orders=available, my_orders=my_tasks, total_hours=total_hours)
 
 def accept_order(order_id):
     if session.get('role') != 'acceptor': return redirect(url_for('login'))
+    if request.method != 'POST': return redirect(url_for('acceptor_dashboard'))
     
     success, msg = OrderService.accept_order(order_id, session['user_id'])
     flash(msg)

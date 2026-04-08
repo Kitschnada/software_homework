@@ -1,0 +1,76 @@
+{% extends "layout.html" %}
+{% block content %}
+<div style="max-width: 1100px; margin: 0 auto;">
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <h2>⏱️ 接单员工时管理</h2>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn-outline" style="padding: 8px 18px;">← 返回控制台</a>
+    </div>
+
+    {% if acceptors %}
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <table>
+            <thead>
+                <tr>
+                    <th>UID</th>
+                    <th>姓名</th>
+                    <th>手机</th>
+                    <th>接单 / 完成</th>
+                    <th style="width: 28%;">工时进度 (30h)</th>
+                    <th>调整工时</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in acceptors %}
+                {% set pct = ((a.total_hours / 30) * 100) | round(1) %}
+                {% if pct > 100 %}{% set pct = 100 %}{% endif %}
+                {% if pct < 60 %}
+                {% set bar_color = 'var(--accent-green)' %}
+                {% set bar_bg = 'linear-gradient(90deg, #10b981, #34d399)' %}
+                {% elif pct < 90 %}
+                {% set bar_color = 'var(--accent-amber)' %}
+                {% set bar_bg = 'linear-gradient(90deg, #f59e0b, #fbbf24)' %}
+                {% else %}
+                {% set bar_color = 'var(--accent-red)' %}
+                {% set bar_bg = 'linear-gradient(90deg, #ef4444, #f87171)' %}
+                {% endif %}
+                <tr>
+                    <td class="font-mono text-primary">{{ a.uid }}</td>
+                    <td style="font-weight: 600;">{{ a.real_name }}</td>
+                    <td class="text-muted">{{ a.phone }}</td>
+                    <td>
+                        <span class="text-primary font-semibold">{{ a.task_count }}</span>
+                        <span class="text-muted">/</span>
+                        <span class="text-green font-semibold">{{ a.completed_count }}</span>
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="flex: 1;" class="progress-track">
+                                <div class="progress-fill" style="width: {{ pct }}%; background: {{ bar_bg }};"></div>
+                            </div>
+                            <span style="font-size: 13px; font-weight: 600; color: {{ bar_color }}; white-space: nowrap;">
+                                {{ a.total_hours }}h
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        <form method="post" action="{{ url_for('set_volunteer_hours') }}" style="display: flex; align-items: center; gap: 6px;">
+                            <input type="hidden" name="acceptor_id" value="{{ a.id }}">
+                            <input type="number" name="hours" value="{{ a.total_hours }}" min="0" max="30" step="0.5"
+                                style="width: 65px; padding: 4px 6px; font-size: 13px; height: 28px; text-align: center;">
+                            <button type="submit" style="padding: 4px 12px; font-size: 12px; height: 28px;">设置</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="card" style="text-align: center; color: var(--text-muted); padding: 40px;">
+        暂无已审核的接单员。
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

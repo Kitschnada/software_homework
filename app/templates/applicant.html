@@ -2,99 +2,94 @@
 
 {% block content %}
 <div style="max-width: 1100px; margin: 0 auto;">
-    
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
         <h2>申请者控制台</h2>
-        <button onclick="document.getElementById('createOrderModal').style.display='block'" class="btn-primary" style="font-size: 16px; padding: 10px 20px; display: flex; align-items: center; gap: 5px;">
-            <span>+</span> 发起新工单
+        <button onclick="document.getElementById('createOrderModal').style.display='flex'"
+            style="padding: 10px 22px; font-size: 14px; border-radius: var(--radius-full);">
+            + 发起新工单
         </button>
     </div>
 
-    <div class="section" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 40px;">
-        <h3 style="margin-top: 0; color: #007bff; border-bottom: 2px solid #007bff; display: inline-block; padding-bottom: 5px;">
-            👤 我的申请记录
-        </h3>
+    <!-- 我的申请记录 -->
+    <div class="card">
+        <h3>👤 我的申请记录</h3>
 
         {% if orders %}
-        <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
-            <thead style="background-color: #f8f9fa;">
+        <table>
+            <thead>
                 <tr>
-                    <th style="padding: 12px; border-bottom: 2px solid #eee;">ID</th>
-                    <th style="padding: 12px; border-bottom: 2px solid #eee;">类别</th>
-                    <th style="padding: 12px; border-bottom: 2px solid #eee;">截止时间</th>
-                    <th style="padding: 12px; border-bottom: 2px solid #eee;">当前状态</th>
-                    <th style="padding: 12px; border-bottom: 2px solid #eee;">接单人</th>
-                    <th style="padding: 12px; border-bottom: 2px solid #eee;">附件/成果</th>
-                    <th style="padding: 12px; border-bottom: 2px solid #eee;">操作</th>
+                    <th>ID</th>
+                    <th>类别</th>
+                    <th>截止</th>
+                    <th>状态</th>
+                    <th>接单人</th>
+                    <th>附件/成果</th>
+                    <th>操作</th>
                 </tr>
             </thead>
             <tbody>
                 {% for order in orders %}
-                <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 12px; color: #888;">#{{ order.id }}</td>
-                    
-                    <td style="padding: 12px;">
-                        <span style="background: #e6f7ff; color: #1890ff; padding: 2px 6px; border-radius: 4px; font-size: 12px;">
-                            {{ order.category_name }}
-                        </span>
-                    </td>
-                    
-                    <td style="padding: 12px; color: #e6a23c;">{{ order.deadline }}</td>
-                    
-                    <td style="padding: 12px;">
+                <tr>
+                    <td class="font-mono text-muted">#{{ order.id }}</td>
+                    <td><span class="badge badge-accepted" style="font-size: 11px;">{{ order.category_name }}</span></td>
+                    <td class="text-amber font-semibold">{{ order.deadline }}</td>
+                    <td>
                         {% if order.status == 'pending' %}
-                            <span style="color: #ffc107;">⌛ 待接单</span>
+                        <span class="badge badge-pending"><span class="badge-dot"></span>待接单</span>
                         {% elif order.status == 'accepted' %}
-                            <span style="color: #007bff;">⚡ 制作中</span>
+                        <span class="badge badge-accepted"><span class="badge-dot"></span>制作中</span>
                         {% elif order.status == 'completed' %}
-                            <span style="color: #28a745;">✅ 已完成</span>
+                        <span class="badge badge-completed"><span class="badge-dot"></span>已完成</span>
                         {% elif order.status == 'rejected' %}
-                            <span style="color: #dc3545;">🚫 已驳回</span>
+                        <span class="badge badge-rejected"><span class="badge-dot"></span>已驳回</span>
                         {% endif %}
                     </td>
-                    
-                    <td style="padding: 12px; color: #666;">
-                        {{ order.acceptor_name if order.acceptor_name else '-' }}
+                    <td>
+                        {% if order.acceptor_name %}
+                        <span class="text-primary font-semibold">{{ order.acceptor_name }}</span>
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
                     </td>
-                    
-                    <td style="padding: 12px;">
-                        <div style="display: flex; flex-direction: column; gap: 5px;">
+                    <td>
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
                             {% if order.attachment_path %}
-                                <a href="{{ url_for('static', filename='uploads/' + order.attachment_path) }}" target="_blank" style="color: #666; font-size: 12px; text-decoration: none;">
-                                    📎 查看附件
-                                </a>
+                            <a href="{{ url_for('static', filename='uploads/' + order.attachment_path) }}" target="_blank"
+                                class="text-muted" style="text-decoration: none; font-size: 12px;">📎 查看附件</a>
                             {% endif %}
-                            
                             {% if order.status == 'completed' and order.result_path %}
-                                <a href="{{ url_for('static', filename='results/' + order.result_path) }}" target="_blank" style="color: #28a745; font-weight: bold; font-size: 12px; text-decoration: none;">
-                                    📥 下载成果
-                                </a>
+                            <a href="{{ url_for('static', filename='results/' + order.result_path) }}" target="_blank"
+                                class="text-green" style="text-decoration: none; font-weight: 600; font-size: 12px;">📥 下载成果</a>
                             {% endif %}
-                            
                             {% if not order.attachment_path and not order.result_path %}
-                                <span style="color: #ccc;">-</span>
+                            <span class="text-muted">—</span>
                             {% endif %}
                         </div>
                     </td>
-                    
-                    <td style="padding: 12px;">
+                    <td>
                         {% if order.status == 'pending' %}
-                            <div style="display: flex; gap: 8px;">
-                                <a href="{{ url_for('edit_order', order_id=order.id) }}" class="btn-primary" style="background-color: #17a2b8; padding: 4px 8px; font-size: 12px; text-decoration: none;">修改</a>
-                                <a href="{{ url_for('cancel_order', order_id=order.id) }}" class="btn-danger" style="padding: 4px 8px; font-size: 12px; text-decoration: none;" onclick="return confirm('确定要撤销并删除此工单吗？');">撤销</a>
-                            </div>
-
+                        <div style="display: flex; gap: 6px;">
+                            <a href="{{ url_for('edit_order', order_id=order.id) }}" class="btn-outline" style="padding: 3px 10px; font-size: 12px;">修改</a>
+                            <form method="post" action="{{ url_for('cancel_order', order_id=order.id) }}" style="display: inline;"
+                                onsubmit="return confirm('确定要撤销并删除此工单吗？');">
+                                <button type="submit" class="btn-danger" style="padding: 3px 10px; font-size: 12px;">撤销</button>
+                            </form>
+                        </div>
                         {% elif order.status == 'completed' %}
                             {% if not order.rating %}
-                                <button onclick="openRateModal('{{ order.id }}')" style="padding: 4px 10px; font-size: 12px; background: #faad14; border:none; color: white; border-radius: 4px; cursor: pointer;">
-                                    ★ 评价
-                                </button>
+                            <button onclick="openRateModal('{{ order.id }}')"
+                                style="padding: 4px 12px; font-size: 12px; background: var(--accent-amber); border-radius: var(--radius-sm);">
+                                ★ 评价
+                            </button>
                             {% else %}
-                                <span style="color: #faad14; font-size: 13px;">★ {{ order.rating }} 星</span>
+                            <span class="text-amber font-semibold text-sm">★ {{ order.rating }} 星</span>
                             {% endif %}
-                        
+                        {% elif order.status == 'rejected' %}
+                        <a href="{{ url_for('edit_order', order_id=order.id) }}" class="btn-primary"
+                            style="padding: 4px 12px; font-size: 12px; background: var(--accent-amber);">修改并重新提交</a>
                         {% else %}
-                            <span style="color: #ccc; font-size: 12px;">处理中</span>
+                        <span class="text-muted text-xs">处理中</span>
                         {% endif %}
                     </td>
                 </tr>
@@ -102,34 +97,38 @@
             </tbody>
         </table>
         {% else %}
-        <p style="text-align: center; color: #999; padding: 20px;">暂无申请记录</p>
+        <div style="padding: 30px; text-align: center; color: var(--text-muted); background: var(--bg-section); border-radius: var(--radius-md);">
+            暂无申请记录
+        </div>
         {% endif %}
     </div>
 
+    <!-- 本部门工单公示 -->
     {% if dept_orders %}
-    <div class="section" style="background: #fdfdfd; padding: 20px; border-radius: 8px; border: 1px dashed #ddd;">
-        <h3 style="margin-top: 0; color: #666; border-bottom: 1px solid #ddd; display: inline-block; padding-bottom: 5px;">
-            🏢 本部门工单公示
-        </h3>
-        <table style="width: 100%; border-collapse: collapse;">
-            <thead style="background-color: #f4f4f4;">
+    <div class="card" style="border: 1px dashed var(--border-light);">
+        <h3>🏢 本部门工单公示</h3>
+        <table>
+            <thead>
                 <tr>
-                    <th style="padding: 10px; color: #666;">申请人</th>
-                    <th style="padding: 10px; color: #666;">类别</th>
-                    <th style="padding: 10px; color: #666;">截止时间</th>
-                    <th style="padding: 10px; color: #666;">状态</th>
+                    <th>申请人</th>
+                    <th>类别</th>
+                    <th>截止</th>
+                    <th>状态</th>
                 </tr>
             </thead>
             <tbody>
                 {% for order in dept_orders %}
-                <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 10px;">{{ order.applicant_name }}</td>
-                    <td style="padding: 10px;">{{ order.category_name }}</td>
-                    <td style="padding: 10px;">{{ order.deadline }}</td>
-                    <td style="padding: 10px;">
-                        {% if order.status == 'pending' %}待接单
-                        {% elif order.status == 'accepted' %}制作中
-                        {% elif order.status == 'completed' %}已完成
+                <tr>
+                    <td style="font-weight: 500;">{{ order.applicant_name }}</td>
+                    <td><span class="badge badge-accepted" style="font-size: 11px;">{{ order.category_name }}</span></td>
+                    <td class="text-amber">{{ order.deadline }}</td>
+                    <td>
+                        {% if order.status == 'pending' %}
+                        <span class="badge badge-pending"><span class="badge-dot"></span>待接单</span>
+                        {% elif order.status == 'accepted' %}
+                        <span class="badge badge-accepted"><span class="badge-dot"></span>制作中</span>
+                        {% elif order.status == 'completed' %}
+                        <span class="badge badge-completed"><span class="badge-dot"></span>已完成</span>
                         {% endif %}
                     </td>
                 </tr>
@@ -139,15 +138,17 @@
     </div>
     {% endif %}
 
-    <div id="createOrderModal" style="display:none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);">
-        <div style="background-color: #fff; margin: 5% auto; padding: 30px; border-radius: 8px; width: 50%; max-width: 600px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative;">
-            <span onclick="document.getElementById('createOrderModal').style.display='none'" style="position: absolute; right: 20px; top: 15px; font-size: 28px; cursor: pointer; color: #aaa;">&times;</span>
-            <h3 style="margin-top: 0; color: #333;">📝 发起工单申请</h3>
-            
+    <!-- 创建工单弹窗 -->
+    <div id="createOrderModal" style="display:none; position: fixed; z-index: 200; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); align-items: center; justify-content: center;">
+        <div style="background: var(--bg-card); padding: 32px; border-radius: var(--radius-lg); width: 520px; max-width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.15); position: relative; animation: flashIn 0.3s ease;">
+            <span onclick="document.getElementById('createOrderModal').style.display='none'"
+                style="position: absolute; right: 18px; top: 12px; font-size: 24px; cursor: pointer; color: var(--text-muted); line-height: 1;">&times;</span>
+            <h3 style="margin-bottom: 20px;">📝 发起工单申请</h3>
+
             <form method="post" action="{{ url_for('create_order') }}" enctype="multipart/form-data">
                 <div class="form-group">
                     <label>工单类别</label>
-                    <select name="category_id" required style="width: 100%; padding: 8px;">
+                    <select name="category_id" required>
                         {% for cat in categories %}
                         <option value="{{ cat.id }}">{{ cat.name }}</option>
                         {% endfor %}
@@ -155,39 +156,45 @@
                 </div>
                 <div class="form-group">
                     <label>申请部门</label>
-                    <input type="text" value="系统自动填入您的部门" disabled style="background: #eee; width: 100%;">
+                    <input type="text" value="系统自动填入您的部门" disabled>
                 </div>
                 <div class="form-group">
                     <label>联系方式 (手机/微信)</label>
-                    <input type="text" name="contact" required style="width: 100%;">
+                    <input type="text" name="contact" required>
                 </div>
                 <div class="form-group">
                     <label>期望截止时间</label>
-                    <input type="date" name="deadline" required style="width: 100%;">
+                    <input type="date" name="deadline" required>
+                </div>
+                <div class="form-group">
+                    <label>需要人数 <span class="text-muted text-xs">(可同时接单的人数，默认1人)</span></label>
+                    <input type="number" name="max_acceptors" value="1" min="1" max="10">
                 </div>
                 <div class="form-group">
                     <label>制作要求</label>
-                    <textarea name="requirements" rows="4" required placeholder="请详细描述尺寸、配色、文案等要求" style="width: 100%; padding: 10px; box-sizing: border-box;"></textarea>
+                    <textarea name="requirements" rows="4" required placeholder="请详细描述尺寸、配色、文案等要求"></textarea>
                 </div>
                 <div class="form-group">
                     <label>上传附件 (可选)</label>
                     <input type="file" name="attachment">
                 </div>
-                <div style="text-align: right; margin-top: 20px;">
-                    <button type="button" onclick="document.getElementById('createOrderModal').style.display='none'" style="background: #ccc; border: none; padding: 10px 20px; margin-right: 10px; cursor: pointer; border-radius: 4px;">取消</button>
-                    <button type="submit" class="btn-primary" style="padding: 10px 30px;">提交申请</button>
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px;">
+                    <button type="button" onclick="document.getElementById('createOrderModal').style.display='none'"
+                        class="btn-ghost" style="padding: 10px 20px;">取消</button>
+                    <button type="submit" style="padding: 10px 28px;">提交申请</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <div id="rateModal" style="display:none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);">
-        <div style="background-color: #fff; margin: 15% auto; padding: 25px; border-radius: 8px; width: 400px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
-            <h3 style="margin-top: 0; color: #faad14;">🌟 评价本次服务</h3>
+    <!-- 评价弹窗 -->
+    <div id="rateModal" style="display:none; position: fixed; z-index: 200; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); align-items: center; justify-content: center;">
+        <div style="background: var(--bg-card); padding: 28px; border-radius: var(--radius-lg); width: 420px; max-width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.15); animation: flashIn 0.3s ease;">
+            <h3 style="color: var(--accent-amber);">🌟 评价本次服务</h3>
             <form id="rateForm" method="post">
                 <div class="form-group">
                     <label>满意度评分</label>
-                    <select name="rating" style="width: 100%; padding: 10px; border-color: #faad14;">
+                    <select name="rating">
                         <option value="5">⭐⭐⭐⭐⭐ (非常满意)</option>
                         <option value="4">⭐⭐⭐⭐ (满意)</option>
                         <option value="3">⭐⭐⭐ (一般)</option>
@@ -197,36 +204,52 @@
                 </div>
                 <div class="form-group">
                     <label>评语 (选填)</label>
-                    <textarea name="comment" rows="3" placeholder="您对本次服务有什么建议？" style="width: 100%; padding: 10px; box-sizing: border-box;"></textarea>
+                    <textarea name="comment" rows="3" placeholder="您对本次服务有什么建议？"></textarea>
                 </div>
-                <div style="text-align: right; margin-top: 20px;">
-                    <button type="button" onclick="document.getElementById('rateModal').style.display='none'" style="background: #ccc; border: none; padding: 8px 15px; margin-right: 10px; cursor: pointer; border-radius: 4px;">取消</button>
-                    <button type="submit" class="btn-primary" style="background: #faad14; padding: 8px 20px;">提交评价</button>
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                    <button type="button" onclick="document.getElementById('rateModal').style.display='none'" class="btn-ghost" style="padding: 8px 16px;">取消</button>
+                    <button type="submit" style="padding: 8px 22px; background: var(--accent-amber);">提交评价</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        // 动态设置评价表单的 Action
         function openRateModal(orderId) {
             var form = document.getElementById('rateForm');
-            // 确保 orderId 被正确识别为路径的一部分
             form.action = "/rate_order/" + orderId;
-            document.getElementById('rateModal').style.display = 'block';
+            document.getElementById('rateModal').style.display = 'flex';
         }
-        
-        // 点击窗口外部关闭弹窗
         window.onclick = function(event) {
-            var createModal = document.getElementById('createOrderModal');
-            var rateModal = document.getElementById('rateModal');
-            if (event.target == createModal) {
-                createModal.style.display = "none";
-            }
-            if (event.target == rateModal) {
-                rateModal.style.display = "none";
-            }
+            ['createOrderModal', 'rateModal'].forEach(id => {
+                var modal = document.getElementById(id);
+                if (event.target == modal) modal.style.display = 'none';
+            });
         }
+
+        // 增加截止日期不能早于当天的限制，以及上传附件大小限制
+        document.addEventListener('DOMContentLoaded', function() {
+            var now = new Date();
+            var year = now.getFullYear();
+            var month = String(now.getMonth() + 1).padStart(2, '0');
+            var day = String(now.getDate()).padStart(2, '0');
+            var localDate = year + '-' + month + '-' + day;
+            
+            var dateInput = document.querySelector('input[name="deadline"]');
+            if (dateInput) {
+                dateInput.setAttribute('min', localDate);
+            }
+            
+            var fileInput = document.querySelector('input[name="attachment"]');
+            if (fileInput) {
+                fileInput.addEventListener('change', function() {
+                    if (this.files[0] && this.files[0].size > 5 * 1024 * 1024) {
+                        alert('上传的附件大小不能超过 5MB');
+                        this.value = '';
+                    }
+                });
+            }
+        });
     </script>
 
 </div>

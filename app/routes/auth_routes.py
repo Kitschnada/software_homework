@@ -18,6 +18,14 @@ def login():
             session['username'] = user['nickname'] if user['nickname'] else user['real_name']
             session['role'] = user['role']
             
+            # 查询并存入部门代码，供模板和路由判断使用
+            db = get_db()
+            dept_info = db.execute(
+                'SELECT d.code FROM departments d WHERE d.id = ?', 
+                (user['department_id'],)
+            ).fetchone() if user['department_id'] else None
+            session['dept_code'] = dept_info['code'] if dept_info else None
+            
             flash(f'欢迎回来，{session["username"]}')
             return redirect(url_for('dashboard'))
         else:
@@ -48,7 +56,7 @@ def register():
 
 def dashboard():
     if 'user_id' not in session:
-        return redirect(url_for('index'))
+        return redirect(url_for('login'))
     
     role = session['role']
     if role == 'applicant':
@@ -58,6 +66,9 @@ def dashboard():
     elif role == 'admin':
         return redirect(url_for('admin_dashboard'))
     elif role == 'dept_admin':
+        # 融媒体中心管理员拥有更高权限，跳转管理控制台
+        if session.get('dept_code') == 'MEDIA':
+            return redirect(url_for('admin_dashboard'))
         return redirect(url_for('manage_users'))
     return redirect(url_for('logout'))    
     # 这里后面需要补充一个逻辑，就是融媒体中心管理员会拥有一个比其它部门管理员更高一点的逻辑权限，
@@ -82,9 +93,10 @@ def profile():
         nickname = request.form.get('nickname', '').strip()
         phone = request.form.get('phone', '').strip()
         new_password = request.form.get('new_password', '').strip()
+        qq_number = request.form.get('qq_number', '').strip()
         
         # 调用 Service 更新
-        success, msg = AuthService.update_profile(user_id, nickname, phone, new_password)
+        success, msg = AuthService.update_profile(user_id, nickname, phone, new_password, qq_number)
         flash(msg)
         
         if success:

@@ -1,230 +1,659 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>融媒体中心工单系统</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* 保持原有的专业风格 */
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        /* ============================================
+           Design System — 融媒体中心
+           Color Palette: Deep Indigo + Warm Accents
+           ============================================ */
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #6366f1;
+            --primary-dark: #4338ca;
+            --primary-bg: rgba(79, 70, 229, 0.06);
+            --accent-green: #10b981;
+            --accent-green-bg: rgba(16, 185, 129, 0.08);
+            --accent-amber: #f59e0b;
+            --accent-amber-bg: rgba(245, 158, 11, 0.08);
+            --accent-red: #ef4444;
+            --accent-red-bg: rgba(239, 68, 68, 0.06);
+            --accent-sky: #0ea5e9;
+            --accent-sky-bg: rgba(14, 165, 233, 0.06);
+            --text-primary: #1e1b4b;
+            --text-secondary: #6b7280;
+            --text-muted: #9ca3af;
+            --bg-body: #f5f3ff;
+            --bg-card: #ffffff;
+            --bg-section: #faf9ff;
+            --border-light: #e5e7eb;
+            --border-subtle: #f0eeff;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 12px rgba(79,70,229,0.06);
+            --shadow-lg: 0 8px 30px rgba(79,70,229,0.08);
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+            --radius-full: 9999px;
+            --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             margin: 0;
-            background-color: #f4f7f6;
-            color: #333;
+            background: var(--bg-body);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
         }
-        .container { 
-            max-width: 1000px; 
-            margin: 30px auto; 
-            background: #fff;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            border-radius: 8px;
+
+        /* ============ Layout ============ */
+        .container {
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 0 24px 40px;
         }
-        nav { 
-            margin-bottom: 20px; 
-            padding: 15px; 
-            background: #007bff; 
+
+        /* ============ Navigation ============ */
+        nav {
+            background: linear-gradient(135deg, #312e81 0%, #4f46e5 50%, #6366f1 100%);
             color: white;
-            border-radius: 5px;
+            padding: 0 24px;
+            margin-bottom: 28px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(79,70,229,0.15);
+            min-height: 56px;
         }
-        nav a {
-            color: white;
-            text-decoration: none;
-            margin-left: 15px;
-            font-weight: bold;
-        }
-        nav a:hover {
-            text-decoration: underline;
-        }
-        h2, h3, h4 {
-            color: #2c3e50;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 10px;
-        }
-        /* 增加 readonly 输入框的样式 */
-        input[readonly], input[disabled] {
-            background-color: #e9ecef;
-            cursor: not-allowed;
-            color: #6c757d;
-        }
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin-top: 15px; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        th, td { 
-            border: 1px solid #e1e4e8; 
-            padding: 12px; 
-            text-align: left; 
-        }
-        th { 
-            background-color: #f8f9fa; 
+
+        nav .nav-brand {
             font-weight: 600;
-            color: #495057;
+            font-size: 14px;
+            opacity: 0.95;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        tr:hover {
-            background-color: #f1f1f1;
+
+        nav .nav-brand .role-badge {
+            background: rgba(255,255,255,0.18);
+            padding: 2px 10px;
+            border-radius: var(--radius-full);
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
         }
-        .flash { 
-            padding: 10px;
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-            border-radius: 4px;
-            list-style-type: none;
+
+        nav .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        nav a {
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 13px;
+            padding: 8px 14px;
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+        }
+
+        nav a:hover {
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+        }
+
+        /* ============ Typography ============ */
+        h2 {
+            color: var(--text-primary);
+            font-size: 22px;
+            font-weight: 700;
+            margin: 0 0 4px;
+            border: none;
+            padding: 0;
+        }
+
+        h3 {
+            color: var(--text-primary);
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0 0 16px;
+            padding: 0;
+            border: none;
+        }
+
+        h4 {
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+            margin: 0 0 12px;
+            border: none;
+            padding: 0;
+        }
+
+        /* ============ Cards & Section ============ */
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-subtle);
+            margin-bottom: 24px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 20px;
         }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: 500; }
-        input[type="text"], input[type="password"], input[type="date"], select, textarea {
+
+        .section { /* legacy compat */
+            background: var(--bg-card);
+            padding: 24px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-subtle);
+            margin-bottom: 24px;
+        }
+
+        /* ============ Flash Messages ============ */
+        .flash {
+            padding: 14px 18px;
+            background: linear-gradient(135deg, var(--accent-green-bg), rgba(16,185,129,0.03));
+            color: #065f46;
+            border: 1px solid rgba(16,185,129,0.2);
+            border-radius: var(--radius-md);
+            list-style-type: none;
+            margin: 0 0 20px;
+            font-size: 14px;
+            font-weight: 500;
+            animation: flashIn 0.3s ease;
+        }
+
+        @keyframes flashIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ============ Tables ============ */
+        table {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-            box-sizing: border-box;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 0;
+            box-shadow: none;
+            font-size: 13px;
         }
-        button {
-            background-color: #28a745;
-            color: white;
-            padding: 10px 20px;
+
+        th, td {
+            padding: 12px 14px;
+            text-align: left;
             border: none;
-            border-radius: 4px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        th {
+            background: var(--bg-section);
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        thead tr:first-child th:first-child { border-radius: var(--radius-md) 0 0 0; }
+        thead tr:first-child th:last-child { border-radius: 0 var(--radius-md) 0 0; }
+
+        tbody tr {
+            transition: var(--transition);
+        }
+
+        tbody tr:hover {
+            background: var(--primary-bg);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* ============ Forms ============ */
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            font-size: 13px;
+            color: var(--text-primary);
+        }
+
+        input[type="text"],
+        input[type="password"],
+        input[type="date"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            box-sizing: border-box;
+            font-size: 14px;
+            font-family: inherit;
+            color: var(--text-primary);
+            background: var(--bg-card);
+            transition: var(--transition);
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-bg);
+        }
+
+        input[readonly], input[disabled] {
+            background-color: var(--bg-section);
+            cursor: not-allowed;
+            color: var(--text-muted);
+        }
+
+        /* ============ Buttons ============ */
+        button, .btn-primary, .btn-danger {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-family: inherit;
+            font-weight: 600;
+            border: none;
+            border-radius: var(--radius-sm);
             cursor: pointer;
-            font-size: 16px;
+            transition: var(--transition);
+            text-decoration: none;
+            white-space: nowrap;
         }
+
+        button {
+            background: var(--primary);
+            color: white;
+            padding: 10px 22px;
+            font-size: 14px;
+        }
+
         button:hover {
-            background-color: #218838;
+            background: var(--primary-dark);
+            box-shadow: 0 2px 8px rgba(79,70,229,0.25);
+            transform: translateY(-1px);
         }
-        .btn-danger {
-            background-color: #dc3545;
-            padding: 5px 10px;
-            text-decoration: none;
-            color: white;
-            border-radius: 3px;
-            font-size: 14px;
-        }
+
         .btn-primary {
-            background-color: #007bff;
-            padding: 5px 10px;
-            text-decoration: none;
+            background: var(--primary);
             color: white;
-            border-radius: 3px;
-            font-size: 14px;
+            padding: 6px 16px;
+            font-size: 13px;
         }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            box-shadow: 0 2px 8px rgba(79,70,229,0.25);
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: var(--accent-red);
+            color: white;
+            padding: 6px 14px;
+            font-size: 13px;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+            box-shadow: 0 2px 8px rgba(239,68,68,0.25);
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--primary);
+            padding: 6px 16px;
+            font-size: 13px;
+            border: 1.5px solid var(--primary);
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-outline:hover {
+            background: var(--primary-bg);
+        }
+
+        .btn-ghost {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-section);
+            color: var(--text-secondary);
+            padding: 6px 14px;
+            font-size: 13px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+        }
+
+        .btn-ghost:hover {
+            background: var(--border-light);
+            color: var(--text-primary);
+        }
+
+        /* ============ Status Badges ============ */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+        }
+
+        .badge-pending { background: var(--accent-amber-bg); color: #92400e; }
+        .badge-accepted { background: var(--accent-sky-bg); color: #0c4a6e; }
+        .badge-completed { background: var(--accent-green-bg); color: #065f46; }
+        .badge-rejected { background: var(--accent-red-bg); color: #991b1b; }
+
+        .badge-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+        }
+        .badge-pending .badge-dot { background: var(--accent-amber); }
+        .badge-accepted .badge-dot { background: var(--accent-sky); }
+        .badge-completed .badge-dot { background: var(--accent-green); }
+        .badge-rejected .badge-dot { background: var(--accent-red); }
+
+        /* ============ Stat Cards ============ */
+        .stat-card {
+            flex: 1;
+            padding: 20px 22px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-subtle);
+            background: var(--bg-card);
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .stat-card .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 8px 0 2px;
+        }
+
+        .stat-card .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        /* ============ Progress Bar ============ */
+        .progress-track {
+            background: var(--border-light);
+            border-radius: var(--radius-full);
+            height: 8px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: var(--radius-full);
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ============ Alert Banners ============ */
+        .alert {
+            padding: 14px 18px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-warning {
+            background: var(--accent-amber-bg);
+            border: 1px solid rgba(245,158,11,0.2);
+            color: #92400e;
+        }
+
+        .alert-info {
+            background: var(--primary-bg);
+            border: 1px solid rgba(79,70,229,0.15);
+            color: var(--primary-dark);
+        }
+
+        /* ============ Footer ============ */
         .footer-section {
-            margin-top: 50px;
-            padding-top: 20px;
-            border-top: 1px dashed #ddd;
+            margin-top: 60px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-light);
             text-align: center;
         }
+
         .footer-links {
             display: flex;
             justify-content: center;
-            gap: 15px;
+            gap: 12px;
             flex-wrap: wrap;
-            margin-top: 15px;
+            margin-top: 14px;
         }
+
         .link-btn {
-            display: inline-block;
-            padding: 8px 16px;
-            background-color: #f8f9fa;
-            color: #555;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 18px;
+            background: var(--bg-card);
+            color: var(--text-secondary);
             text-decoration: none;
-            border: 1px solid #e0e0e0;
-            border-radius: 20px; /* 胶囊形状 */
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-full);
             font-size: 13px;
-            transition: all 0.3s ease;
+            font-weight: 500;
+            transition: var(--transition);
         }
+
         .link-btn:hover {
-            background-color: #007bff;
+            background: var(--primary);
             color: white;
-            border-color: #007bff;
-            transform: translateY(-2px); /* 悬停微动效果 */
-            box-shadow: 0 2px 5px rgba(0,123,255,0.3);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(79,70,229,0.2);
         }
+
         .footer-copyright {
-            margin-top: 25px;
-            color: #aaa;
+            margin-top: 20px;
+            color: var(--text-muted);
             font-size: 12px;
+            padding-bottom: 20px;
         }
+
+        /* ============ Sort Headers ============ */
+        th.sortable {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            padding-right: 25px;
+        }
+
+        th.sortable:hover { background: var(--border-light); }
+        th.sortable.asc::after, th.sortable.desc::after {
+            content: '';
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0; height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+        }
+        th.sortable.asc::after { border-bottom: 4px solid var(--text-secondary); }
+        th.sortable.desc::after { border-top: 4px solid var(--text-secondary); }
+
+        /* ============ Utility ============ */
+        .text-muted { color: var(--text-muted); }
+        .text-primary { color: var(--primary); }
+        .text-green { color: var(--accent-green); }
+        .text-amber { color: var(--accent-amber); }
+        .text-red { color: var(--accent-red); }
+        .font-mono { font-family: 'SF Mono', 'Fira Code', monospace; }
+        .font-semibold { font-weight: 600; }
+        .text-sm { font-size: 13px; }
+        .text-xs { font-size: 12px; }
+        .flex { display: flex; }
+        .items-center { align-items: center; }
+        .gap-2 { gap: 8px; }
+        .gap-3 { gap: 12px; }
+        .gap-5 { gap: 20px; }
+        .mb-4 { margin-bottom: 16px; }
+        .mb-6 { margin-bottom: 24px; }
+        .mt-4 { margin-top: 16px; }
     </style>
+    <script>
+        // 表格排序功能
+        function makeTableSortable() {
+            document.querySelectorAll('table').forEach(table => {
+                table.querySelectorAll('thead th').forEach((header, columnIndex) => {
+                    if (['操作', '成果上传', '调整工时', '名额'].includes(header.textContent.trim())) return;
+                    header.classList.add('sortable');
+                    header.addEventListener('click', () => sortTable(table, columnIndex, header));
+                });
+            });
+        }
+
+        function sortTable(table, columnIndex, header) {
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const isAscending = header.classList.contains('asc');
+
+            table.querySelectorAll('thead th').forEach(h => h.classList.remove('asc', 'desc'));
+
+            rows.sort((a, b) => {
+                let aV = a.cells[columnIndex]?.textContent.trim() || '';
+                let bV = b.cells[columnIndex]?.textContent.trim() || '';
+                const aN = parseFloat(aV), bN = parseFloat(bV);
+                if (!isNaN(aN) && !isNaN(bN)) return isAscending ? bN - aN : aN - bN;
+                return isAscending ? bV.localeCompare(aV, 'zh-CN') : aV.localeCompare(bV, 'zh-CN');
+            });
+
+            tbody.innerHTML = '';
+            rows.forEach(row => tbody.appendChild(row));
+            header.classList.add(isAscending ? 'desc' : 'asc');
+        }
+
+        document.addEventListener('DOMContentLoaded', makeTableSortable);
+    </script>
 </head>
+
 <body>
+    <nav>
+        {% if session.user_id %}
+        <div class="nav-brand">
+            <span>👋 {{ session.username }}</span>
+            <span class="role-badge">
+                {% if session.role == 'admin' %}系统管理员
+                {% elif session.role == 'dept_admin' %}
+                {% if session.dept_code == 'MEDIA' %}融媒体管理
+                {% else %}部门管理{% endif %}
+                {% elif session.role == 'acceptor' %}成员
+                {% elif session.role == 'applicant' %}申请者
+                {% endif %}
+            </span>
+        </div>
+
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">控制台</a>
+            {% if session.role != 'admin' %}
+            <a href="{{ url_for('calendar_view') }}">📅 日程</a>
+            {% endif %}
+            {% if session.role in ['admin', 'dept_admin'] %}
+            <a href="{{ url_for('manage_users') }}">用户管理</a>
+            {% endif %}
+            {% if session.role == 'admin' %}
+            <a href="{{ url_for('manage_volunteer_hours') }}">⏱️ 工时</a>
+            {% endif %}
+            <a href="{{ url_for('profile') }}">个人信息</a>
+            <a href="{{ url_for('logout') }}" style="opacity:0.7;">退出</a>
+        </div>
+        {% else %}
+        <div class="nav-brand">
+            <span>吴健雄学院融媒体中心工单系统</span>
+        </div>
+        <div class="nav-links">
+            <a href="{{ url_for('login') }}">登录</a>
+            <a href="{{ url_for('register') }}">注册申请</a>
+        </div>
+        {% endif %}
+    </nav>
+
     <div class="container">
-        <nav>
-            {% if session.user_id %}
-                <span>欢迎, {{ session.username }} 
-                    {% if session.role == 'admin' %}(系统管理员)
-                    {% elif session.role == 'dept_admin' %}
-                        {% if session.dept_code == 'MEDIA' %}(融媒体中心管理员)
-                        {% else %}(一般管理员)
-                        {% endif %}
-                    {% elif session.role == 'acceptor' %}(成员账户)
-                    {% elif session.role == 'applicant' %}(一般账户)
-                    {% endif %}
-                </span>
-                
-                <div>
-                    <a href="{{ url_for('dashboard') }}">控制台</a>
-                    {% if session.role != 'admin' %}
-                    <a href="{{ url_for('calendar_view') }}" style="color: #ffeb3b;">📅 日程排期</a>
-                    {% endif %}
-                    
-                    {% if session.role in ['admin', 'dept_admin'] %}
-                    <a href="{{ url_for('manage_users') }}">用户管理</a>
-                    {% endif %}
-                    
-                    <a href="{{ url_for('profile') }}">个人信息</a>
-                    <a href="{{ url_for('logout') }}">退出登录</a>
-                </div>
-            {% else %}
-                <span>吴健雄学院融媒体中心工单系统</span>
-                <div>
-                    <a href="{{ url_for('login') }}">登录</a>
-                    <a href="{{ url_for('register') }}">注册申请</a>
-                </div>
-            {% endif %}
-        </nav>
-        
         {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <ul class="flash">
-                {% for message in messages %}
-                    <li>{{ message }}</li>
-                {% endfor %}
-                </ul>
-            {% endif %}
+        {% if messages %}
+        <ul class="flash">
+            {% for message in messages %}
+            <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
         {% endwith %}
-        
+
         <div style="min-height: 400px;">
             {% block content %}{% endblock %}
         </div>
 
         <div class="footer-section">
-            <h5 style="color: #999; margin: 0 0 10px 0; font-weight: normal; font-size: 14px;">— 常用工具与链接 —</h5>
-            
+            <p style="color: var(--text-muted); margin: 0 0 10px; font-size: 13px;">常用工具与链接</p>
             <div class="footer-links">
-                <a href="https://wjx.seu.edu.cn/" target="_blank" class="link-btn">
-                    🏛️ 东南大学吴健雄学院
-                </a>
-                <a href="https://xiumi.us/#/" target="_blank" class="link-btn">
-                    🎨 秀米编辑器
-                </a>
-                <a href="https://mp.weixin.qq.com/" target="_blank" class="link-btn">
-                    💬 微信公众平台
-                </a>
-                <a href="https://miaobi.xinhuaskl.com/" target="_blank" class="link-btn">
-                    ✍️ 新华妙笔
-                </a>
+                <a href="https://wjx.seu.edu.cn/" target="_blank" class="link-btn">🏛️ 吴健雄学院</a>
+                <a href="https://xiumi.us/#/" target="_blank" class="link-btn">🎨 秀米编辑器</a>
+                <a href="https://mp.weixin.qq.com/" target="_blank" class="link-btn">💬 微信公众平台</a>
+                <a href="https://miaobi.xinhuaskl.com/" target="_blank" class="link-btn">✍️ 新华妙笔</a>
             </div>
-
             <div class="footer-copyright">
                 &copy; 2026 融媒体中心工单管理系统 | Support by 吴健雄学院融媒体中心
             </div>
         </div>
     </div>
 </body>
+
 </html>

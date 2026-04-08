@@ -9,6 +9,7 @@ class AuthService:
         """
         核心算法：生成唯一识别码 (UID)
         格式：部门Code + 年份 + 3位流水号 (例如 MEDIA2026001)
+        使用 MAX 提取最大流水号，防止删除用户后产生 UID 冲突
         """
         db = get_db()
         
@@ -20,13 +21,18 @@ class AuthService:
         # 2. 获取当前年份
         year = datetime.datetime.now().year
         
-        # 3. 计算该部门今年已注册多少人，生成流水号
-        # 使用 LIKE 查询该部门该年份前缀的现有用户数
+        # 3. 提取该部门该年份的最大流水号
         prefix = f"{dept_code}{year}"
-        count = db.execute('SELECT COUNT(*) FROM users WHERE uid LIKE ?', (f'{prefix}%',)).fetchone()[0]
+        prefix_len = len(prefix)
+        row = db.execute(
+            'SELECT MAX(CAST(SUBSTR(uid, ?) AS INTEGER)) as max_seq FROM users WHERE uid LIKE ?',
+            (prefix_len + 1, f'{prefix}%')
+        ).fetchone()
         
-        # 4. 拼接 (流水号+1，并补零至3位)
-        new_uid = f"{prefix}{str(count + 1).zfill(3)}"
+        next_seq = (row['max_seq'] or 0) + 1
+        
+        # 4. 拼接 (流水号补零至3位)
+        new_uid = f"{prefix}{str(next_seq).zfill(3)}"
         return new_uid
 
     @staticmethod
@@ -65,6 +71,13 @@ class AuthService:
                 INSERT INTO users (uid, password, card_id, real_name, phone, role, department_id, is_approved) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, 0)
             ''', (uid, generate_password_hash(password), card_id, real_name, phone, role, dept_id))
+            
+            # 如果是接单员，自动初始化工时记录
+            if role == 'acceptor':
+                new_user = db.execute('SELECT id FROM users WHERE uid = ?', (uid,)).fetchone()
+                if new_user:
+                    db.execute('INSERT OR IGNORE INTO acceptor_hours (acceptor_id, total_hours) VALUES (?, 0)', (new_user['id'],))
+            
             db.commit()
             return True, f"注册成功！您的唯一识别码为：{uid}。需等待审核通过后方可登录。"
         except Exception as e:
@@ -105,11 +118,11 @@ class AuthService:
         ''', (user_id,)).fetchone()
 
     @staticmethod
-    def update_profile(user_id, nickname, phone, new_password=None):
+    def update_profile(user_id, nickname, phone, new_password=None, qq_number=None):
         """
         综合更新个人信息
-        1. 校验手机号/昵称唯一性 (排除自己)
-        2. 更新 昵称、手机
+        1. 校验手机号/昵称/QQ唯一性 (排除自己)
+        2. 更新 昵称、手机、QQ
         3. 如果提供了新密码，则加密更新；否则保留原密码
         """
         db = get_db()
@@ -118,6 +131,11 @@ class AuthService:
         # 检查手机号
         exist_phone = db.execute('SELECT id FROM users WHERE phone = ? AND id != ?', (phone, user_id)).fetchone()
         if exist_phone: return False, "修改失败：该手机号已被其他账号绑定"
+        
+        # 检查QQ号 (如果填写了QQ，不能和别人重复)
+        if qq_number:
+            exist_qq = db.execute('SELECT id FROM users WHERE qq_number = ? AND id != ?', (qq_number, user_id)).fetchone()
+            if exist_qq: return False, "修改失败：该 QQ 号已与其他账号绑定"
         
         # 检查昵称 (如果昵称不为空)
         if nickname:
@@ -131,17 +149,17 @@ class AuthService:
                 hashed_pw = generate_password_hash(new_password)
                 db.execute('''
                     UPDATE users 
-                    SET nickname = ?, phone = ?, password = ? 
+                    SET nickname = ?, phone = ?, qq_number = ?, password = ? 
                     WHERE id = ?
-                ''', (nickname, phone, hashed_pw, user_id))
+                ''', (nickname, phone, qq_number, hashed_pw, user_id))
                 msg = "个人信息与密码已同步更新"
             else:
                 # 情况B: 仅修改信息
                 db.execute('''
                     UPDATE users 
-                    SET nickname = ?, phone = ? 
+                    SET nickname = ?, phone = ?, qq_number = ?
                     WHERE id = ?
-                ''', (nickname, phone, user_id))
+                ''', (nickname, phone, qq_number, user_id))
                 msg = "个人信息更新成功"
                 
             db.commit()

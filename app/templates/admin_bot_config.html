@@ -1,0 +1,20 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 40px auto; padding: 32px;">
+    <h2>🤖 QQ 机器人与大模型配置 (服务端)</h2>
+    <p class="text-muted" style="margin-bottom: 24px;">此处设置会自动生效。注意：大部分配置项请前往本地 QQ 机器人终端管理。</p>
+
+    <form method="post" action="{{ url_for('admin.bot_settings') }}">
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label style="font-weight: 600; display: block; margin-bottom: 8px;">服务器端 API 鉴权令牌 (QQ_BOT_TOKEN)</label>
+            <input type="text" name="qq_bot_token" value="{{ settings.qq_bot_token or config.QQ_BOT_TOKEN }}" placeholder="必须与本地客户端填写的 Token 一致" 
+                   style="width: 100%; padding: 10px; border: 1px solid var(--border-subtle); border-radius: 6px;" required>
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <a href="{{ url_for('admin_dashboard') }}" class="btn-outline">返回大厅</a>
+            <button type="submit" class="btn-primary" style="padding: 10px 24px;">保存配置</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

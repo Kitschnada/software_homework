@@ -1,11 +1,14 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="header-action">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
+<div style="max-width: 1100px; margin: 0 auto;">
+
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px;">
         <div>
             <h2>管理控制台</h2>
-            <p style="margin: 5px 0 0 0;">当前权限：
-                <strong>
+            <p style="margin: 4px 0 0; color: var(--text-muted); font-size: 13px;">
+                当前权限：
+                <strong style="color: var(--primary);">
                     {% if session.role == 'admin' %}系统最高权限
                     {% elif is_media_admin %}全局工单监管 (融媒体中心)
                     {% else %}部门内部管理
@@ -13,174 +16,238 @@
                 </strong>
             </p>
         </div>
-        
-        <a href="{{ url_for('data_screen') }}" target="_blank" 
-           style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 25px; border-radius: 30px; text-decoration: none; font-weight: bold; box-shadow: 0 4px 15px rgba(118, 75, 162, 0.4); display: flex; align-items: center; gap: 8px; transition: transform 0.2s;">
-           <span>🚀</span> 启动数字建设成果看板
-        </a>
-    </div>
-</div>
-
-{% if session.role == 'admin' %}
-
-<div style="background: #fffbe6; border-left: 4px solid #faad14; padding: 12px 15px; margin-bottom: 20px; display: flex; align-items: center; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-    <span style="font-weight: bold; margin-right: 15px; color: #d46b08; white-space: nowrap;">🚨 未来 3 天截止任务播报:</span>
-    <marquee onmouseover="this.stop();" onmouseout="this.start();" scrollamount="5" style="color: #555; font-size: 14px;">
-        {% if upcoming_tasks %}
-            {% for task in upcoming_tasks %}
-                <span style="margin-right: 40px; display: inline-flex; align-items: center; gap: 5px;">
-                    <span style="width:8px;height:8px;border-radius:50%;background:#faad14;"></span>
-                    <b>[{{ task.deadline }}]</b> 
-                    {{ task.dept_name or '校级' }} - {{ task.category_name }}
-                    <i style="color:#999;">(接单: {% if task.status == 'pending' %}尚未接单{% else %}处理中{% endif %})</i>
-                </span>
-            {% endfor %}
-        {% else %}
-            <span style="color: #52c41a;">🎉 未来三天内暂无将要截止的工单，系统运转良好！</span>
-        {% endif %}
-    </marquee>
-</div>
-
-<div class="stats-container" style="display: flex; gap: 20px; margin-bottom: 30px;">
-    <div style="flex: 1; background: #007bff; color: white; padding: 20px; border-radius: 8px;">
-        <h3>总工单数</h3><p style="font-size: 24px;">{{ stats.total }}</p>
-    </div>
-    <div style="flex: 1; background: #28a745; color: white; padding: 20px; border-radius: 8px;">
-        <h3>已完成</h3><p style="font-size: 24px;">{{ stats.completed }}</p>
-    </div>
-    <div style="flex: 1; background: #ffc107; color: white; padding: 20px; border-radius: 8px;">
-        <h3>待处理</h3><p style="font-size: 24px;">{{ stats.pending }}</p>
-    </div>
-</div>
-
-<div class="section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border: 1px solid #eee;">
-    <h3 style="margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px;">🏢 组织架构与部门管理</h3>
-    
-    <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-        <h4 style="margin-top: 0; color: #555; font-size: 14px;">新增部门</h4>
-        <form action="{{ url_for('create_department') }}" method="post" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
-            <div style="display: flex; flex-direction: column; width: 180px;">
-                <label style="font-size: 12px; margin-bottom: 5px;">部门名称 <span style="color:red;">*</span></label>
-                <input type="text" name="name" placeholder="如: 吴健雄学院" required style="padding: 6px; height: 32px; box-sizing: border-box;">
-            </div>
-            <div style="display: flex; flex-direction: column; width: 120px;">
-                <label style="font-size: 12px; margin-bottom: 5px;">部门代码 <span style="color:red;">*</span></label>
-                <input type="text" name="code" placeholder="如: WJX" required style="padding: 6px; height: 32px; box-sizing: border-box; text-transform: uppercase;">
-            </div>
-            <div style="display: flex; flex-direction: column; width: 120px;">
-                <label style="font-size: 12px; margin-bottom: 5px;">负责人 (选填)</label>
-                <input type="text" name="head_name" placeholder="姓名" style="padding: 6px; height: 32px; box-sizing: border-box;">
-            </div>
-            <div style="display: flex; flex-direction: column; width: 140px;">
-                <label style="font-size: 12px; margin-bottom: 5px;">联系电话 (选填)</label>
-                <input type="text" name="phone" placeholder="手机号" style="padding: 6px; height: 32px; box-sizing: border-box;">
-            </div>
-            <div style="display: flex; flex-direction: column; width: 140px;">
-                <label style="font-size: 12px; margin-bottom: 5px;">QQ号 (选填)</label>
-                <input type="text" name="qq" placeholder="QQ号码" style="padding: 6px; height: 32px; box-sizing: border-box;">
-            </div>
-            <button type="submit" class="btn-primary" style="height: 32px; padding: 0 20px;">创建并分配账号</button>
-        </form>
-        <small style="color: #888; display: block; margin-top: 8px;">* 创建成功后，系统会自动生成账号 <b>ADMIN_部门代码</b>，初始密码同账号名。</small>
-    </div>
-
-    <table style="width: 100%; border-collapse: collapse;">
-        <thead style="background-color: #fdfdfd;">
-            <tr>
-                <th style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">部门名称</th>
-                <th style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">代码</th>
-                <th style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">负责人</th>
-                <th style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">联系方式 (电话/QQ)</th>
-                <th style="padding: 10px; border-bottom: 1px solid #eee; text-align: left;">操作</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for dept in departments %}
-            <tr style="border-bottom: 1px solid #f5f5f5;">
-                <td style="padding: 10px; font-weight: bold; color: #333;">{{ dept.name }}</td>
-                <td style="padding: 10px; font-family: monospace; color: #007bff;">{{ dept.code }}</td>
-                <td style="padding: 10px;">{{ dept.head_name or '-' }}</td>
-                <td style="padding: 10px; font-size: 13px;">
-                    <div style="color: #555;">📞 {{ dept.phone or '未填' }}</div>
-                    <div style="color: #888;">💬 {{ dept.qq or '未填' }}</div>
-                </td>
-                <td style="padding: 10px;">
-                    <a href="{{ url_for('edit_department', dept_id=dept.id) }}" style="color: #409eff; text-decoration: none; margin-right: 10px; font-size: 13px;">编辑</a>
-                    {% if dept.code != 'MEDIA' %}
-                    <a href="{{ url_for('delete_department', dept_id=dept.id) }}" style="color: #f56c6c; text-decoration: none; font-size: 13px;" onclick="return confirm('⚠️ 危险操作：删除部门将级联删除该部门下的【所有用户账户】！确定继续吗？');">删除</a>
-                    {% else %}
-                    <span style="color: #ccc; font-size: 13px; cursor: not-allowed;" title="核心系统部门无法删除">锁定</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% endif %}
-
-<div class="section">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <h3 style="margin: 0;">工单大厅</h3>
-        
-        <form method="get" action="{{ url_for('admin_dashboard') }}" style="display: flex; gap: 8px; align-items: center; flex-wrap: nowrap;">
-            
-            {% if session.role == 'admin' or is_media_admin %}
-            <select name="filter_dept" style="height: 34px; padding: 0 10px; border-radius: 4px; border: 1px solid #ccc; outline: none; background: white; color: #555;">
-                <option value="">全校所有部门</option>
-                {% for dept in departments %}
-                <option value="{{ dept.id }}" {% if request.args.get('filter_dept') == dept.id|string %}selected{% endif %}>{{ dept.name }}</option>
-                {% endfor %}
-            </select>
+        <div style="display: flex; gap: 12px;">
+            {% if session.role == 'admin' %}
+            <a href="{{ url_for('admin.volunteer_hours_settings') }}" class="btn-primary"
+                style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 10px 24px; border-radius: var(--radius-full); box-shadow: 0 4px 15px rgba(16,185,129,0.3);">
+                ⏱️ 默认工时设置
+            </a>
+            <a href="{{ url_for('admin.bot_settings') }}" class="btn-primary"
+                style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 10px 24px; border-radius: var(--radius-full); box-shadow: 0 4px 15px rgba(16,185,129,0.3);">
+                🤖 QQ机器人设置
+            </a>
             {% endif %}
-            
-            <input type="text" name="q" value="{{ request.args.get('q', '') }}" placeholder="搜索需求 / 姓名 / UID / 手机..." style="height: 34px; width: 260px; padding: 0 10px; border-radius: 4px; border: 1px solid #ccc; outline: none; box-sizing: border-box;">
-            
-            <button type="submit" class="btn-primary" style="height: 34px; padding: 0 15px; border: none; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 5px;">🔍 检索</button>
-            
-            <a href="{{ url_for('admin_dashboard') }}" style="color: #999; text-decoration: none; font-size: 13px; white-space: nowrap; padding: 0 5px;">清空</a>
-        </form>
+            <a href="{{ url_for('data_screen') }}" target="_blank" class="btn-primary"
+                style="background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%); padding: 10px 24px; border-radius: var(--radius-full); box-shadow: 0 4px 15px rgba(79,70,229,0.3);">
+                🚀 数字建设成果看板
+            </a>
+        </div>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>来源部门</th>
-                <th>申请人</th>
-                <th>业务类型</th>
-                <th>截止日期</th>
-                <th>当前状态</th>
-                <th>操作</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for order in orders %}
-            <tr>
-                <td>{{ order.id }}</td>
-                <td>{{ order.dept_name or '校级' }}</td>
-                <td>{{ order.applicant_name }}</td>
-                <td>{{ order.category_name }}</td>
-                <td>{{ order.deadline }}</td>
-                <td>
-                    {% if order.status == 'pending' %}<span style="color: #ffc107;">待接单</span>
-                    {% elif order.status == 'accepted' %}<span style="color: #007bff;">受理中</span>
-                    {% elif order.status == 'completed' %}<span style="color: #28a745;">已完成</span>
-                    {% elif order.status == 'rejected' %}<span style="color: #dc3545;">已驳回</span>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if order.status == 'pending' %}
-                        <a href="{{ url_for('reject_order', order_id=order.id) }}" class="btn-danger" onclick="return confirm('确定驳回此工单吗？')">驳回</a>
-                    {% endif %}
-                    
-                    {% if session.role == 'admin' %}
-                        <a href="{{ url_for('delete_order', order_id=order.id) }}" class="btn-danger" style="background: #6c757d;" onclick="return confirm('警告：将同步删除服务器上的附件，确定继续吗？')">物理删除</a>
-                    {% endif %}
-                </td>
-            </tr>
+    {% if session.role == 'admin' or is_media_admin %}
+
+    <!-- Upcoming Tasks Alert -->
+    <div class="alert alert-warning" style="margin-bottom: 24px;">
+        <span style="font-weight: 600; white-space: nowrap;">🚨 3日内截止:</span>
+        <marquee onmouseover="this.stop();" onmouseout="this.start();" scrollamount="4" style="font-size: 13px;">
+            {% if upcoming_tasks %}
+            {% for task in upcoming_tasks %}
+            <span style="margin-right: 40px;">
+                <b>[{{ task.deadline }}]</b>
+                {{ task.dept_name or '校级' }} — {{ task.category_name }}
+                <span class="text-muted">({% if task.status == 'pending' %}未接单{% else %}处理中{% endif %})</span>
+            </span>
             {% endfor %}
-        </tbody>
-    </table>
+            {% else %}
+            <span class="text-green">🎉 未来三天暂无将要截止的工单，运转良好！</span>
+            {% endif %}
+        </marquee>
+    </div>
+
+    <!-- Stats -->
+    <div style="display: flex; gap: 16px; margin-bottom: 28px;">
+        <div class="stat-card" style="border-left: 3px solid var(--primary);">
+            <div class="stat-label">总工单</div>
+            <div class="stat-value" style="color: var(--primary);">{{ stats.total }}</div>
+        </div>
+        <div class="stat-card" style="border-left: 3px solid var(--accent-green);">
+            <div class="stat-label">已完成</div>
+            <div class="stat-value" style="color: var(--accent-green);">{{ stats.completed }}</div>
+        </div>
+        <div class="stat-card" style="border-left: 3px solid var(--accent-amber);">
+            <div class="stat-label">待处理</div>
+            <div class="stat-value" style="color: var(--accent-amber);">{{ stats.pending }}</div>
+        </div>
+        {% if session.role == 'admin' %}
+        <div class="stat-card" style="border-left: 3px solid #8b5cf6;">
+            <div class="stat-label">QQ 通知队列</div>
+            <div class="stat-value" style="font-size: 16px;">
+                <span style="color: var(--accent-green);">● 就绪</span>
+            </div>
+            <form method="post" action="{{ url_for('test_qq_bot') }}" style="margin-top: 6px;">
+                <button type="submit" class="btn-outline" style="padding: 2px 10px; font-size: 11px;">发送测试</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Department Management -->
+    {% if session.role == 'admin' %}
+    <div class="card">
+        <h3>🏢 组织架构与部门管理</h3>
+
+        <div style="background: var(--bg-section); padding: 16px; border-radius: var(--radius-md); margin-bottom: 20px; border: 1px solid var(--border-subtle);">
+            <h4 style="margin-bottom: 12px;">新增部门</h4>
+            <form action="{{ url_for('create_department') }}" method="post"
+                style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+                <div style="display: flex; flex-direction: column; width: 160px;">
+                    <label class="text-xs">部门名称 <span class="text-red">*</span></label>
+                    <input type="text" name="name" placeholder="如: 吴健雄学院" required style="padding: 7px 10px; height: 34px;">
+                </div>
+                <div style="display: flex; flex-direction: column; width: 110px;">
+                    <label class="text-xs">部门代码 <span class="text-red">*</span></label>
+                    <input type="text" name="code" placeholder="如: WJX" required style="padding: 7px 10px; height: 34px; text-transform: uppercase;">
+                </div>
+                <div style="display: flex; flex-direction: column; width: 110px;">
+                    <label class="text-xs">负责人</label>
+                    <input type="text" name="head_name" placeholder="姓名" style="padding: 7px 10px; height: 34px;">
+                </div>
+                <div style="display: flex; flex-direction: column; width: 130px;">
+                    <label class="text-xs">电话</label>
+                    <input type="text" name="phone" placeholder="手机号" style="padding: 7px 10px; height: 34px;">
+                </div>
+                <div style="display: flex; flex-direction: column; width: 120px;">
+                    <label class="text-xs">QQ号</label>
+                    <input type="text" name="qq" placeholder="QQ" style="padding: 7px 10px; height: 34px;">
+                </div>
+                <button type="submit" style="height: 34px; padding: 0 18px; font-size: 13px;">创建</button>
+            </form>
+            <p class="text-xs text-muted" style="margin: 10px 0 0;">* 创建后自动生成账号 <b>ADMIN_部门代码</b>，初始密码同账号名。</p>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>部门名称</th>
+                    <th>代码</th>
+                    <th>负责人</th>
+                    <th>联系方式</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dept in departments %}
+                <tr>
+                    <td style="font-weight: 600;">{{ dept.name }}</td>
+                    <td><span class="font-mono text-primary">{{ dept.code }}</span></td>
+                    <td>{{ dept.head_name or '—' }}</td>
+                    <td class="text-sm">
+                        <span class="text-muted">📞</span> {{ dept.phone or '未填' }} &nbsp;
+                        <span class="text-muted">💬</span> {{ dept.qq or '未填' }}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('edit_department', dept_id=dept.id) }}" class="btn-outline" style="padding: 3px 10px; font-size: 12px;">编辑</a>
+                        {% if dept.code != 'MEDIA' %}
+                        <form method="post" action="{{ url_for('delete_department', dept_id=dept.id) }}" style="display: inline;"
+                            onsubmit="return confirm('⚠️ 删除部门将级联删除所有用户！确定？');">
+                            <button type="submit" class="btn-danger" style="padding: 3px 10px; font-size: 12px;">删除</button>
+                        </form>
+                        {% else %}
+                        <span class="text-muted text-xs" style="cursor: not-allowed;">🔒 锁定</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <!-- Order Hall -->
+    <div class="card">
+        <div class="card-header">
+            <h3 style="margin: 0;">📋 工单大厅</h3>
+            <form method="get" action="{{ url_for('admin_dashboard') }}" style="display: flex; gap: 8px; align-items: center;">
+                {% if session.role == 'admin' or is_media_admin %}
+                <select name="filter_dept" style="height: 34px; padding: 0 10px; font-size: 13px;">
+                    <option value="">全校所有部门</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept.id }}" {% if request.args.get('filter_dept')==dept.id|string %}selected{% endif %}>{{ dept.name }}</option>
+                    {% endfor %}
+                </select>
+                {% endif %}
+                <input type="text" name="q" value="{{ request.args.get('q', '') }}" placeholder="搜索需求 / 姓名 / UID..."
+                    style="height: 34px; width: 240px; padding: 0 12px; font-size: 13px;">
+                <button type="submit" style="height: 34px; padding: 0 16px; font-size: 13px;">🔍 检索</button>
+                <a href="{{ url_for('admin_dashboard') }}" class="btn-ghost" style="height: 34px; line-height: 34px;">清空</a>
+            </form>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>来源部门</th>
+                    <th>申请人</th>
+                    <th>接单人</th>
+                    <th>业务类型</th>
+                    <th>截止日期</th>
+                    <th>名额</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td class="font-mono text-muted">#{{ order.id }}</td>
+                    <td>{{ order.dept_name or '校级' }}</td>
+                    <td style="font-weight: 500;">{{ order.applicant_name }}</td>
+                    <td>
+                        {% if order.acceptor_names %}
+                        <span class="text-primary font-semibold">{{ order.acceptor_names }}</span>
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td><span class="badge badge-accepted" style="font-size: 11px;">{{ order.category_name }}</span></td>
+                    <td class="text-amber font-semibold">{{ order.deadline }}</td>
+                    <td>
+                        {% if order.status not in ('completed', 'rejected') %}
+                        <form method="post" action="{{ url_for('update_max_acceptors') }}" style="display: inline-flex; align-items: center; gap: 3px;">
+                            <input type="hidden" name="order_id" value="{{ order.id }}">
+                            <span class="text-xs text-muted">{{ order.current_acceptors }}/</span>
+                            <input type="number" name="max_acceptors" value="{{ order.max_acceptors|default(1) }}" min="1" max="10"
+                                style="width: 42px; padding: 2px 4px; font-size: 12px; height: 26px; text-align: center;">
+                            <button type="submit" style="background: none; border: none; cursor: pointer; color: var(--primary); padding: 0; font-size: 14px; box-shadow: none;">✓</button>
+                        </form>
+                        {% else %}
+                        <span class="text-xs text-muted">{{ order.current_acceptors }}/{{ order.max_acceptors|default(1) }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if order.status == 'pending' %}
+                        <span class="badge badge-pending"><span class="badge-dot"></span>待接单</span>
+                        {% elif order.status == 'accepted' %}
+                        <span class="badge badge-accepted"><span class="badge-dot"></span>受理中</span>
+                        {% elif order.status == 'completed' %}
+                        <span class="badge badge-completed"><span class="badge-dot"></span>已完成</span>
+                        {% elif order.status == 'rejected' %}
+                        <span class="badge badge-rejected"><span class="badge-dot"></span>已驳回</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        {% if order.status == 'pending' %}
+                        <form method="post" action="{{ url_for('reject_order', order_id=order.id) }}" style="display: inline;"
+                            onsubmit="return confirm('确定驳回此工单吗？');">
+                            <button type="submit" class="btn-danger" style="padding: 3px 10px; font-size: 12px;">驳回</button>
+                        </form>
+                        {% endif %}
+                        {% if session.role == 'admin' %}
+                        <form method="post" action="{{ url_for('delete_order', order_id=order.id) }}" style="display: inline;"
+                            onsubmit="return confirm('⚠️ 将同步删除附件，确定？');">
+                            <button type="submit" class="btn-ghost" style="padding: 3px 10px; font-size: 12px; color: var(--accent-red);">删除</button>
+                        </form>
+                        {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
 </div>
 {% endblock %}

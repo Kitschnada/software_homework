@@ -1,5 +1,6 @@
 import os
 import uuid
+import json
 from flask import current_app
 from werkzeug.utils import secure_filename
 from app.db import get_db
@@ -63,14 +64,19 @@ class OrderService:
         available = db.execute('''
             SELECT w.*, c.name as category_name, 
                    u.real_name as applicant_name, u.uid as applicant_uid, u.phone as applicant_phone,
-                   d.name as dept_name
+                   d.name as dept_name,
+                   w.max_acceptors,
+                   (SELECT COUNT(*) FROM assignments a2 WHERE a2.work_order_id = w.id) as current_acceptors
             FROM work_orders w 
             JOIN categories c ON w.category_id = c.id
             JOIN users u ON w.applicant_id = u.id 
             LEFT JOIN departments d ON w.department_id = d.id
-            WHERE w.status = 'pending'
+            WHERE (w.status = 'pending'
+                   OR (w.status = 'accepted' 
+                       AND (SELECT COUNT(*) FROM assignments a3 WHERE a3.work_order_id = w.id) < w.max_acceptors))
+              AND w.id NOT IN (SELECT a4.work_order_id FROM assignments a4 WHERE a4.acceptor_id = ?)
             ORDER BY w.created_at ASC
-        ''').fetchall()
+        ''', (user_id,)).fetchall()
 
         # 2. 我的任务
         my_tasks = db.execute('''
@@ -108,13 +114,37 @@ class OrderService:
             filename = str(uuid.uuid4()) + ext
             file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
             
+        max_acceptors = int(form.get('max_acceptors', 1))
+        if max_acceptors < 1: max_acceptors = 1
+        if max_acceptors > 10: max_acceptors = 10
+
         try:
-            db.execute('''
-                INSERT INTO work_orders (applicant_id, category_id, department_id, contact, deadline, requirements, attachment_path) 
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+            cursor = db.execute('''
+                INSERT INTO work_orders (applicant_id, category_id, department_id, contact, deadline, requirements, attachment_path, max_acceptors) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ''', (user_id, form['category_id'], user['department_id'], 
-                  form['contact'], form['deadline'], form['requirements'], filename))
+                  form['contact'], form['deadline'], form['requirements'], filename, max_acceptors))
+            work_order_id = cursor.lastrowid
             db.commit()
+            
+            # 写入 QQ 通知队列（本地机器人会轮询拉取发送）
+            try:
+                from app.services.qq_notify import notify_new_order
+                cat = db.execute('SELECT name FROM categories WHERE id = ?', (form['category_id'],)).fetchone()
+                dept = db.execute('SELECT name FROM departments WHERE id = ?', (user['department_id'],)).fetchone()
+                notify_new_order(
+                    app=None,
+                    work_order_id=work_order_id,
+                    category_name=cat['name'] if cat else '未知',
+                    dept_name=dept['name'] if dept else '未知',
+                    requirements=form['requirements'],
+                    deadline=form['deadline'],
+                    max_acceptors=max_acceptors,
+                    contact=form['contact']
+                )
+            except Exception as e:
+                print(f"[QQ Bot] 通知触发异常(不影响工单): {e}")
+            
             return True, "工单创建成功"
         except Exception as e:
             return False, f"创建失败: {str(e)}"
@@ -127,7 +157,7 @@ class OrderService:
         # 【权限铁闸】严防修改他人订单
         if not order: return False, "工单不存在"
         if str(order['applicant_id']) != str(user_id): return False, "权限不足：您只能修改自己提交的工单"
-        if order['status'] != 'pending': return False, "工单已在处理中，无法修改"
+        if order['status'] not in ('pending', 'rejected'): return False, "工单已在处理中，无法修改"
         
         new_filename = order['attachment_path']
         if file and file.filename:
@@ -139,12 +169,36 @@ class OrderService:
                 try: os.remove(os.path.join(current_app.config['UPLOAD_FOLDER'], order['attachment_path']))
                 except OSError: pass
 
+        max_acceptors = int(form.get('max_acceptors', order['max_acceptors'] or 1))
+        if max_acceptors < 1: max_acceptors = 1
+        if max_acceptors > 10: max_acceptors = 10
+
         db.execute('''
             UPDATE work_orders 
-            SET contact = ?, deadline = ?, requirements = ?, attachment_path = ?
+            SET contact = ?, deadline = ?, requirements = ?, attachment_path = ?, max_acceptors = ?, status = 'pending'
             WHERE id = ?
-        ''', (form['contact'], form['deadline'], form['requirements'], new_filename, order_id))
+        ''', (form['contact'], form['deadline'], form['requirements'], new_filename, max_acceptors, order_id))
         db.commit()
+        
+        if order['status'] == 'rejected':
+            # 驳回重提交：写入 QQ 通知队列
+            try:
+                from app.services.qq_notify import notify_new_order
+                cat = db.execute('SELECT name FROM categories WHERE id = ?', (order['category_id'],)).fetchone()
+                dept = db.execute('SELECT name FROM departments WHERE id = ?', (order['department_id'],)).fetchone()
+                notify_new_order(
+                    app=None,
+                    work_order_id=order_id,
+                    category_name=(cat['name'] if cat else '未知') + '（重新提交）',
+                    dept_name=dept['name'] if dept else '未知',
+                    requirements=form['requirements'],
+                    deadline=form['deadline'],
+                    max_acceptors=max_acceptors,
+                    contact=form['contact']
+                )
+            except Exception as e:
+                print(f"[QQ Bot] 通知触发异常(不影响工单): {e}")
+            return True, "工单已重新提交，等待接单"
         return True, "工单更新成功"
 
     @staticmethod
@@ -176,17 +230,33 @@ class OrderService:
     @staticmethod
     def accept_order(order_id, acceptor_id):
         db = get_db()
-        order = db.execute('SELECT status FROM work_orders WHERE id = ?', (order_id,)).fetchone()
-        if not order or order['status'] != 'pending':
-            return False, "手慢了，工单已被抢走"
-        db.execute('UPDATE work_orders SET status = "accepted" WHERE id = ?', (order_id,))
+        order = db.execute('SELECT status, max_acceptors FROM work_orders WHERE id = ?', (order_id,)).fetchone()
+        if not order or order['status'] not in ('pending', 'accepted'):
+            return False, "工单已完成或已被驳回"
+
+        # 检查是否已接过这个单
+        already = db.execute('SELECT id FROM assignments WHERE work_order_id = ? AND acceptor_id = ?', (order_id, acceptor_id)).fetchone()
+        if already:
+            return False, "您已接过此工单"
+
+        # 检查名额
+        max_acc = order['max_acceptors'] or 1
+        current = db.execute('SELECT COUNT(*) FROM assignments WHERE work_order_id = ?', (order_id,)).fetchone()[0]
+        if current >= max_acc:
+            return False, "手慢了，接单名额已满"
+
         db.execute('INSERT INTO assignments (work_order_id, acceptor_id) VALUES (?, ?)', (order_id, acceptor_id))
+        
+        # 名额填满后将工单状态设为 accepted
+        if current + 1 >= max_acc:
+            db.execute('UPDATE work_orders SET status = "accepted" WHERE id = ?', (order_id,))
+        
         db.commit()
         return True, "抢单成功"
 
     @staticmethod
     def upload_result(assignment_id, acceptor_id, file):
-        if not file or not file.filename: return False, "未选择文件"
+        if not file or not file.filename: return False, "无文件"
         db = get_db()
         assign = db.execute('SELECT * FROM assignments WHERE id = ? AND acceptor_id = ?', (assignment_id, acceptor_id)).fetchone()
         if not assign: return False, "无权操作"
@@ -194,10 +264,114 @@ class OrderService:
         filename = str(uuid.uuid4()) + ext
         file.save(os.path.join(current_app.config['RESULT_FOLDER'], filename))
         db.execute('UPDATE assignments SET result_path = ?, completed_at = CURRENT_TIMESTAMP WHERE id = ?', (filename, assignment_id))
-        db.execute('UPDATE work_orders SET status = "completed" WHERE id = ?', (assign['work_order_id'],))
+        
+        # 多人接单时，只有所有人都提交成果后才标记工单完成
+        total_assignments = db.execute('SELECT COUNT(*) FROM assignments WHERE work_order_id = ?', (assign['work_order_id'],)).fetchone()[0]
+        completed_assignments = db.execute('SELECT COUNT(*) FROM assignments WHERE work_order_id = ? AND result_path IS NOT NULL', (assign['work_order_id'],)).fetchone()[0]
+        if completed_assignments >= total_assignments:
+            db.execute('UPDATE work_orders SET status = "completed" WHERE id = ?', (assign['work_order_id'],))
         db.commit()
+
+        # 工单完成后自动分配志愿时长
+        try:
+            order = db.execute(
+                'SELECT c.name as category_name FROM work_orders w '
+                'JOIN categories c ON w.category_id = c.id '
+                'WHERE w.id = ?', (assign['work_order_id'],)
+            ).fetchone()
+            if order:
+                OrderService.assign_volunteer_hours(assignment_id, order['category_name'])
+        except Exception:
+            pass  # 志愿时长分配失败不影响工单完成
+
         return True, "上传成功，工单已完成"
     
+    @staticmethod
+    def assign_volunteer_hours(assignment_id, category_name):
+        """
+        根据任务类型分配志愿时长，并确保接单员的累计总时长不超过30小时。
+        同时更新 assignments 单条记录和 acceptor_hours 总计。
+        """
+        db = get_db()
+
+        # 获取当前 assignment 信息和接单员 ID
+        assignment = db.execute(
+            'SELECT volunteer_hours, acceptor_id FROM assignments WHERE id = ?',
+            (assignment_id,)
+        ).fetchone()
+
+        if not assignment:
+            raise ValueError("Assignment not found")
+
+        # 从 order_service 管理的配置中读取默认志愿时长
+        hours_mapping = OrderService.get_hours_mapping()
+
+        # 防止 key 为 string 导致 float(:) 时抛异常
+        # 默认值为 0 
+        additional_hours = float(hours_mapping.get(category_name, 0))
+
+        # 从 acceptor_hours 表获取累计总时长
+        total = OrderService.get_acceptor_total_hours(assignment['acceptor_id'])
+
+        # 确保接单员累计总时长不超过30小时
+        if total + additional_hours > 30:
+            additional_hours = max(0, 30 - total)
+
+        if additional_hours > 0:
+            # 更新单条 assignment 记录
+            new_hours = assignment['volunteer_hours'] + additional_hours
+            db.execute(
+                'UPDATE assignments SET volunteer_hours = ? WHERE id = ?',
+                (new_hours, assignment_id)
+            )
+            # 更新 acceptor_hours 总计表
+            db.execute('''
+                INSERT INTO acceptor_hours (acceptor_id, total_hours) VALUES (?, ?)
+                ON CONFLICT(acceptor_id) DO UPDATE SET total_hours = total_hours + ?
+            ''', (assignment['acceptor_id'], additional_hours, additional_hours))
+            db.commit()
+
+    @staticmethod
+    def get_acceptor_total_hours(acceptor_id):
+        """
+        从 acceptor_hours 表获取接单员的累计志愿时长。
+        """
+        db = get_db()
+        result = db.execute(
+            'SELECT total_hours FROM acceptor_hours WHERE acceptor_id = ?',
+            (acceptor_id,)
+        ).fetchone()
+        return result['total_hours'] if result else 0
+
+    @staticmethod
+    def get_hours_mapping():
+        """获取默认志愿时长配置"""
+        config_path = os.path.join(os.path.dirname(__file__), 'volunteer_hours.json')
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except Exception:
+                pass
+        return {
+            '视频制作': 5.0,
+            '海报设计': 4.0,
+            '图文排版': 2.5,
+            '活动摄影': 2.0,
+            '文案撰写': 2.0,
+            '其他': 1.0
+        }
+
+    @staticmethod
+    def set_hours_mapping(mapping):
+        """保存默认志愿时长配置"""
+        config_path = os.path.join(os.path.dirname(__file__), 'volunteer_hours.json')
+        with open(config_path, 'w', encoding='utf-8') as f:
+            # 确保存储为浮点型，并去除首尾空格
+            clean_mapping = {str(k).strip(): float(v) for k, v in mapping.items()}
+            json.dump(clean_mapping, f, ensure_ascii=False, indent=4)
+
+
     @staticmethod
     def get_calendar_events(user_id, role, dept_code, dept_id):
         """

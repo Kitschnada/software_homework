@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>QQ 机器人与大模型配置 (本地端)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #6366f1;
+            --primary-dark: #4338ca;
+            --primary-bg: rgba(79, 70, 229, 0.06);
+            --accent-green: #10b981;
+            --accent-green-bg: rgba(16, 185, 129, 0.08);
+            --text-primary: #1e1b4b;
+            --text-secondary: #6b7280;
+            --text-muted: #9ca3af;
+            --bg-body: #f5f3ff;
+            --bg-card: #ffffff;
+            --bg-section: #faf9ff;
+            --border-light: #e5e7eb;
+            --border-subtle: #f0eeff;
+            --shadow-md: 0 4px 12px rgba(79,70,229,0.06);
+            --radius-sm: 6px;
+            --radius-lg: 16px;
+            --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            margin: 0;
+            background: var(--bg-body);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Nav Header to mimic main UI */
+        nav {
+            background: linear-gradient(135deg, #312e81 0%, #4f46e5 50%, #6366f1 100%);
+            color: white;
+            padding: 0 24px;
+            margin-bottom: 28px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(79,70,229,0.15);
+            min-height: 56px;
+        }
+        nav .nav-brand { font-weight: 600; font-size: 14px; }
+
+        .container { max-width: 1120px; margin: 0 auto; padding: 0 24px 40px; }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-subtle);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h2 { font-size: 22px; margin-top: 0; color: var(--text-primary); margin-bottom: 8px; }
+        h3 { 
+            font-size: 16px; margin: 30px 0 16px; padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-light); color: var(--text-primary); 
+        }
+
+        .form-group { margin-bottom: 18px; }
+        label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 13px; color: var(--text-primary); }
+        
+        input[type="text"], input[type="password"], input[type="number"], select, textarea {
+            width: 100%; padding: 10px 14px; border: 1.5px solid var(--border-light);
+            border-radius: var(--radius-sm); font-size: 14px; font-family: inherit; color: var(--text-primary);
+            background: var(--bg-card); transition: var(--transition);
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-bg);
+        }
+
+        .btn-primary {
+            display: inline-flex; align-items: center; justify-content: center;
+            background: var(--primary); color: white; padding: 10px 24px; font-size: 14px;
+            font-family: inherit; font-weight: 600; border: none; border-radius: var(--radius-sm);
+            cursor: pointer; transition: var(--transition);
+        }
+        .btn-primary:hover { background: var(--primary-dark); box-shadow: 0 2px 8px rgba(79,70,229,0.25); transform: translateY(-1px); }
+
+        .success-msg {
+            padding: 14px 18px; background: linear-gradient(135deg, var(--accent-green-bg), rgba(16,185,129,0.03));
+            color: #065f46; border: 1px solid rgba(16,185,129,0.2); border-radius: 6px;
+            margin: 0 0 20px; font-size: 14px; font-weight: 500;
+        }
+        .text-muted { color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-brand"><span>🤖 融媒体中心 - QQ 机器人本地工作台</span></div>
+    </nav>
+    <div class="container">
+        <div class="card">
+            <h2>🤖 QQ 机器人与大模型配置 (本地端)</h2>
+            <p class="text-muted" style="margin-bottom: 24px;">此处设置保存在本地 <code>qq_bot/local_bot_settings.json</code> 独立使用，并在保存后立即生效。</p>
+            
+            {% if msg %}
+            <div class="success-msg">{{ msg }}</div>
+            {% endif %}
+
+            <form method="post">
+                <h3>基本配置</h3>
+                <div class="form-group">
+                    <label>远程网络服务器 URL (SERVER_URL)</label>
+                    <input type="text" name="server_url" value="{{ settings.get('server_url', '') }}" required>
+                </div>
+                <div class="form-group">
+                    <label>API 鉴权令牌 (QQ_BOT_TOKEN) - 需与服务器一致</label>
+                    <input type="text" name="qq_bot_token" value="{{ settings.get('qq_bot_token', '') }}" required>
+                </div>
+                <div class="form-group">
+                    <label>NapCat API HTTP 地址</label>
+                    <input type="text" name="napcat_api" value="{{ settings.get('napcat_api', '') }}" required>
+                </div>
+                <div class="form-group">
+                    <label>NapCat Auth Token (选填)</label>
+                    <input type="password" name="napcat_token" value="{{ settings.get('napcat_token', '') }}">
+                </div>
+                <div class="form-group">
+                    <label>此机器人的 QQ 号</label>
+                    <input type="text" name="bot_qq" value="{{ settings.get('bot_qq', '') }}">
+                </div>
+                <div class="form-group">
+                    <label>工作群 QQ 群号 (接收工单通知及抢单专属群)</label>
+                    <input type="text" name="work_group_id" value="{{ settings.get('work_group_id', '') }}">
+                </div>
+
+                <h3>大模型 AI 设置</h3>
+                <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" name="enable_llm" id="enable_llm" style="width: 18px; height: 18px;" {% if settings.get('enable_llm', True) %}checked{% endif %}>
+                    <label for="enable_llm" style="margin: 0; display: inline-block;">启用智能回复服务 (私聊和被@时回复)</label>
+                </div>
+                <div class="form-group">
+                    <label>OpenRouter API Key</label>
+                    <input type="password" name="openrouter_api_key" value="{{ settings.get('openrouter_api_key', '') }}" placeholder="sk-or-v1-...">
+                </div>
+                <div class="form-group">
+                    <label>默认闲聊大模型</label>
+                    <select name="default_llm_model">
+                        {% for key, name in available_models.items() %}
+                        <option value="{{ key }}" {% if settings.get('default_llm_model') == key %}selected{% endif %}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>系统提示词 (System Prompt)</label>
+                    <textarea name="system_prompt" rows="5">{{ settings.get('system_prompt', '') }}</textarea>
+                </div>
+
+                <h3>进阶配置</h3>
+                <div class="form-group">
+                    <label>本地 WebHook 监听端口</label>
+                    <input type="number" name="webhook_port" value="{{ settings.get('webhook_port', 6060) }}">
+                </div>
+                <div class="form-group">
+                    <label>通知拉取轮询间隔 (秒)</label>
+                    <input type="number" name="poll_interval" value="{{ settings.get('poll_interval', 5) }}">
+                </div>
+
+                <h3>PythonAnywhere 自动续期 (选填，留空则不开启)</h3>
+                <div class="form-group">
+                    <label>PythonAnywhere 用户名</label>
+                    <input type="text" name="pa_username" value="{{ settings.get('pa_username', '') }}">
+                </div>
+                <div class="form-group">
+                    <label>PythonAnywhere 密码</label>
+                    <input type="password" name="pa_password" value="{{ settings.get('pa_password', '') }}">
+                </div>
+                <div class="form-group">
+                    <label>PythonAnywhere 网站域名 (如: username.pythonanywhere.com)</label>
+                    <input type="text" name="pa_domain" value="{{ settings.get('pa_domain', '') }}">
+                </div>
+
+                <div style="text-align: right; margin-top: 24px;">
+                    <button type="submit" class="btn-primary">保存配置并重载</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

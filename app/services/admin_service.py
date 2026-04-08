@@ -9,6 +9,7 @@ class AdminService:
         """
         核心算法：生成唯一识别码 (UID)
         格式：部门Code + 年份 + 3位流水号 (例如 MEDIA2026001)
+        使用 MAX 提取最大流水号，防止删除用户后产生 UID 冲突
         """
         db = get_db()
         
@@ -20,13 +21,18 @@ class AdminService:
         # 2. 获取当前年份
         year = datetime.datetime.now().year
         
-        # 3. 计算该部门今年已注册多少人，生成流水号
-        # 使用 LIKE 查询该部门该年份前缀的现有用户数
+        # 3. 提取该部门该年份的最大流水号
         prefix = f"{dept_code}{year}"
-        count = db.execute('SELECT COUNT(*) FROM users WHERE uid LIKE ?', (f'{prefix}%',)).fetchone()[0]
+        prefix_len = len(prefix)
+        row = db.execute(
+            'SELECT MAX(CAST(SUBSTR(uid, ?) AS INTEGER)) as max_seq FROM users WHERE uid LIKE ?',
+            (prefix_len + 1, f'{prefix}%')
+        ).fetchone()
         
-        # 4. 拼接 (流水号+1，并补零至3位)
-        new_uid = f"{prefix}{str(count + 1).zfill(3)}"
+        next_seq = (row['max_seq'] or 0) + 1
+        
+        # 4. 拼接 (流水号补零至3位)
+        new_uid = f"{prefix}{str(next_seq).zfill(3)}"
         return new_uid
     
     @staticmethod
@@ -97,11 +103,16 @@ class AdminService:
         
         # 修复：u1.username -> u1.real_name / u1.uid
         base_sql = '''
-            SELECT w.*, c.name as category_name, u1.real_name as applicant_name, u1.uid as applicant_uid, d.name as dept_name
-            FROM work_orders w JOIN categories c ON w.category_id = c.id
-            JOIN users u1 ON w.applicant_id = u1.id LEFT JOIN departments d ON w.department_id = d.id
-            WHERE 1=1
-        '''
+        SELECT w.*, c.name as category_name, u1.real_name as applicant_name, u1.uid as applicant_uid, d.name as dept_name,
+               w.max_acceptors,
+               GROUP_CONCAT(u2.real_name, '、') as acceptor_names,
+               COUNT(a.id) as current_acceptors
+        FROM work_orders w JOIN categories c ON w.category_id = c.id
+        JOIN users u1 ON w.applicant_id = u1.id LEFT JOIN departments d ON w.department_id = d.id
+        LEFT JOIN assignments a ON w.id = a.work_order_id
+        LEFT JOIN users u2 ON a.acceptor_id = u2.id
+        WHERE 1=1
+    '''
         params = []
         
         # 1. 权限与部门筛选
@@ -120,7 +131,7 @@ class AdminService:
             p = f'%{q}%'
             params.extend([p, p, p, p, p])
             
-        base_sql += " ORDER BY w.created_at DESC"
+        base_sql += " GROUP BY w.id ORDER BY w.created_at DESC"
         return db.execute(base_sql, params).fetchall()
 
     @staticmethod
@@ -251,14 +262,20 @@ class AdminService:
 
     @staticmethod
     def purge_order(order_id, upload_dir, result_dir):
-        """物理删除"""
+        """物理删除（支持多人接单）"""
         db = get_db()
         order = db.execute('SELECT attachment_path FROM work_orders WHERE id = ?', (order_id,)).fetchone()
-        assign = db.execute('SELECT result_path FROM assignments WHERE work_order_id = ?', (order_id,)).fetchone()
         
-        for path, folder in [(order['attachment_path'], upload_dir), (assign['result_path'] if assign else None, result_dir)]:
-            if path:
-                try: os.remove(os.path.join(folder, path))
+        # 删除原始附件
+        if order and order['attachment_path']:
+            try: os.remove(os.path.join(upload_dir, order['attachment_path']))
+            except OSError: pass
+        
+        # 删除所有接单人的成果文件
+        assigns = db.execute('SELECT result_path FROM assignments WHERE work_order_id = ?', (order_id,)).fetchall()
+        for assign in assigns:
+            if assign['result_path']:
+                try: os.remove(os.path.join(result_dir, assign['result_path']))
                 except OSError: pass
 
         db.execute('DELETE FROM assignments WHERE work_order_id = ?', (order_id,))
@@ -316,6 +333,12 @@ class AdminService:
         conflict_phone = db.execute('SELECT id FROM users WHERE phone = ? AND id != ?', 
                                   (form['phone'], target_user_id)).fetchone()
         if conflict_phone: return False, "修改失败：该手机号已被其他人占用"
+        
+        # 检查QQ号
+        if form.get('qq_number'):
+            conflict_qq = db.execute('SELECT id FROM users WHERE qq_number = ? AND id != ?', 
+                                     (form['qq_number'], target_user_id)).fetchone()
+            if conflict_qq: return False, "修改失败：该 QQ 号已被其他人占用"
 
         # --- C. 执行更新 ---
         try:
@@ -324,17 +347,17 @@ class AdminService:
                 hashed_pw = generate_password_hash(form['password'])
                 db.execute('''
                     UPDATE users 
-                    SET real_name=?, card_id=?, phone=?, nickname=?, role=?, department_id=?, password=?
+                    SET real_name=?, card_id=?, phone=?, qq_number=?, nickname=?, role=?, department_id=?, password=?
                     WHERE id=?
-                ''', (form['real_name'], form['card_id'], form['phone'], form['nickname'], 
+                ''', (form['real_name'], form['card_id'], form['phone'], form.get('qq_number'), form['nickname'], 
                       form['role'], form['department_id'], hashed_pw, target_user_id))
                 msg = "用户资料及密码已强制更新"
             else:
                 db.execute('''
                     UPDATE users 
-                    SET real_name=?, card_id=?, phone=?, nickname=?, role=?, department_id=?
+                    SET real_name=?, card_id=?, phone=?, qq_number=?, nickname=?, role=?, department_id=?
                     WHERE id=?
-                ''', (form['real_name'], form['card_id'], form['phone'], form['nickname'], 
+                ''', (form['real_name'], form['card_id'], form['phone'], form.get('qq_number'), form['nickname'], 
                       form['role'], form['department_id'], target_user_id))
                 msg = "用户资料已更新"
                 
@@ -425,3 +448,36 @@ class AdminService:
             ORDER BY w.deadline ASC
         ''').fetchall()      
     
+    @staticmethod
+    def get_all_acceptor_hours():
+        """获取所有接单员及其累计志愿工时"""
+        db = get_db()
+        return db.execute('''
+            SELECT u.id, u.uid, u.real_name, u.phone,
+                   COALESCE(ah.total_hours, 0) as total_hours,
+                   (SELECT COUNT(*) FROM assignments a WHERE a.acceptor_id = u.id) as task_count,
+                   (SELECT COUNT(*) FROM assignments a 
+                    JOIN work_orders w ON a.work_order_id = w.id 
+                    WHERE a.acceptor_id = u.id AND w.status = 'completed') as completed_count
+            FROM users u
+            LEFT JOIN acceptor_hours ah ON u.id = ah.acceptor_id
+            WHERE u.role = 'acceptor' AND u.is_approved = 1
+            ORDER BY ah.total_hours DESC
+        ''').fetchall()
+
+    @staticmethod
+    def admin_set_volunteer_hours(acceptor_id, hours):
+        """管理员直接设置接单员工时（封顶30）"""
+        if hours < 0 or hours > 30:
+            return False, "工时必须在 0 到 30 小时之间"
+        db = get_db()
+        # 确认目标是 acceptor
+        user = db.execute('SELECT role FROM users WHERE id = ?', (acceptor_id,)).fetchone()
+        if not user or user['role'] != 'acceptor':
+            return False, "目标用户不是接单员"
+        db.execute('''
+            INSERT INTO acceptor_hours (acceptor_id, total_hours) VALUES (?, ?)
+            ON CONFLICT(acceptor_id) DO UPDATE SET total_hours = ?
+        ''', (acceptor_id, hours, hours))
+        db.commit()
+        return True, "工时更新成功"

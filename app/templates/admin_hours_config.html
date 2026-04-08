@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 40px auto; padding: 32px;">
+    <h2>⏱️ 默认志愿工时配置</h2>
+    <p class="text-muted" style="margin-bottom: 24px;">此处设置全局各种业务类型的默认工时，修改后新接单任务将自动采用此设置，仅限超级管理员修改。</p>
+
+    <form method="post" action="{{ url_for('admin.volunteer_hours_settings') }}">
+        <div class="form-group" style="margin-bottom: 20px;">
+            {% for category, hours in mapping.items() %}
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid var(--border-subtle);">
+                <label style="font-weight: 600; font-size: 15px; color: var(--text-base);">{{ category }}</label>
+                <div style="display: flex; align-items: center;">
+                    <input type="number" step="0.5" min="0" name="hours_{{ loop.index0 }}" value="{{ hours }}" 
+                           style="width: 100px; padding: 10px; border: 1px solid var(--border-subtle); border-radius: 6px; text-align: center;" required>
+                    <input type="hidden" name="category_{{ loop.index0 }}" value="{{ category }}">
+                    <span style="margin-left: 10px; color: var(--text-muted); font-size: 14px;">小时</span>
+                </div>
+            </div>
+            {% endfor %}
+            <input type="hidden" name="total_categories" value="{{ mapping|length }}">
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 30px;">
+            <a href="{{ url_for('admin_dashboard') }}" class="btn-outline">返回大厅</a>
+            <button type="submit" class="btn-primary" style="padding: 10px 24px;">保存配置</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
